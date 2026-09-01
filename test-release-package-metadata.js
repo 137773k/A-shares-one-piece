@@ -105,7 +105,7 @@ test("GitHub工作流以只读权限在临时Windows机器构建并执行安装�
     /node-version: "22\.12\.0"/,
     /npm run test:quant-decision/,
     /npm test/,
-    /npm run desktop:dist/,
+    /npm run desktop:dist -- --publish never/,
     /Build-ReleaseManifest\.ps1/,
     /Test-WindowsInstaller\.ps1/,
     /actions\/checkout@[a-f0-9]{40} # v7\.0\.1/,
@@ -113,6 +113,7 @@ test("GitHub工作流以只读权限在临时Windows机器构建并执行安装�
     /actions\/upload-artifact@[a-f0-9]{40} # v7\.0\.1/,
   ]) assert.match(installerWorkflow, pattern);
   assert.doesNotMatch(installerWorkflow, /secrets\./);
+  assert.doesNotMatch(installerWorkflow, /GH_TOKEN/);
   assert.doesNotMatch(installerWorkflow, /uses:\s+actions\/.+@v\d+/);
 });
 

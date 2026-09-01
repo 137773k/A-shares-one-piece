@@ -57,7 +57,7 @@ jobs:
           npm test
 
       - name: Build Windows packages
-        run: npm run desktop:dist
+        run: npm run desktop:dist -- --publish never
 
       - name: Generate release manifest
         shell: pwsh
