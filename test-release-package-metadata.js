@@ -93,6 +93,7 @@ test("Windows安装验收覆盖干净机、两次启动、数据隔离和卸载�
     /uninstallEntryRemoved/,
     /shortcutsRemoved/,
   ]) assert.match(installerValidation, pattern);
+  assert.doesNotMatch(installerValidation, /ListenerProcessId\.Value/);
 });
 
 test("GitHub工作流以只读权限在临时Windows机器构建并执行安装验收", () => {

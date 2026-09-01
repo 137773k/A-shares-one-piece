@@ -136,8 +136,11 @@ function Stop-ValidatedApplication {
     [string]$AllowedInstallRoot
   )
 
-  if ($ListenerProcessId -and (Get-Process -Id $ListenerProcessId.Value -ErrorAction SilentlyContinue)) {
-    Stop-Process -Id $ListenerProcessId.Value -Force -ErrorAction SilentlyContinue
+  if ($null -ne $ListenerProcessId) {
+    $listenerId = [int]$ListenerProcessId
+    if (Get-Process -Id $listenerId -ErrorAction SilentlyContinue) {
+      Stop-Process -Id $listenerId -Force -ErrorAction SilentlyContinue
+    }
   }
   if ($LaunchProcess -and (Get-Process -Id $LaunchProcess.Id -ErrorAction SilentlyContinue)) {
     Stop-Process -Id $LaunchProcess.Id -Force -ErrorAction SilentlyContinue
@@ -387,7 +390,17 @@ try {
   $report.status = "failed"
   $report.error = $_.Exception.Message
 } finally {
-  Stop-ValidatedApplication -ListenerProcessId $activeListenerProcessId -LaunchProcess $activeLaunchProcess -AllowedInstallRoot $installRoot
+  try {
+    Stop-ValidatedApplication -ListenerProcessId $activeListenerProcessId -LaunchProcess $activeLaunchProcess -AllowedInstallRoot $installRoot
+  } catch {
+    if (-not $failure) {
+      $failure = $_
+      $report.status = "failed"
+      $report.error = "cleanup failed: $($_.Exception.Message)"
+    } else {
+      $report.error = "$($report.error); cleanup also failed: $($_.Exception.Message)"
+    }
+  }
 
   if (-not $uninstallCompleted -and (Test-Path -LiteralPath $installRoot -PathType Container)) {
     $cleanupUninstaller = Get-ChildItem -LiteralPath $installRoot -Filter "Uninstall*.exe" -File -ErrorAction SilentlyContinue | Select-Object -First 1
