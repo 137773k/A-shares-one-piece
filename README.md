@@ -6,8 +6,8 @@
 
 正式发布后，Windows x64 用户只需要下载下列其中一个文件：
 
-- `A股短线模型-Setup-1.2.0-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
-- `A股短线模型-Portable-1.2.0-x64.exe`：免安装便携版，直接运行。
+- `A-shares-one-piece-Setup-1.2.0-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
+- `A-shares-one-piece-Portable-1.2.0-x64.exe`：免安装便携版，直接运行。
 
 安装包已经包含 Electron、Chromium 和 Node.js。普通用户不需要安装 Git、Node.js、npm、Python、AKShare，也不需要配置云端账号。
 

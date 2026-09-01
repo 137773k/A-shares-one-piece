@@ -29,8 +29,10 @@ test("1.2.0发布元数据、Node边界和安装包名称保持一致", () => {
   assert.equal(packageJson.build.win.target.some((item) => item.target === "nsis"), true);
   assert.equal(packageJson.build.win.target.some((item) => item.target === "portable"), true);
   assert.match(packageJson.scripts["desktop:dist"], /--publish never/);
-  assert.match(packageJson.build.nsis.artifactName, /Setup-\$\{version\}-\$\{arch\}/);
-  assert.match(packageJson.build.portable.artifactName, /Portable-\$\{version\}-\$\{arch\}/);
+  assert.equal(packageJson.build.nsis.artifactName, "A-shares-one-piece-Setup-${version}-${arch}.${ext}");
+  assert.equal(packageJson.build.portable.artifactName, "A-shares-one-piece-Portable-${version}-${arch}.${ext}");
+  assert.doesNotMatch(packageJson.build.nsis.artifactName, /[^\x20-\x7e]/);
+  assert.doesNotMatch(packageJson.build.portable.artifactName, /[^\x20-\x7e]/);
 });
 
 test("小白README明确免开发环境、云端边界、数据目录、哈希和投资风险", () => {
@@ -47,9 +49,14 @@ test("小白README明确免开发环境、云端边界、数据目录、哈希�
 test("发布清单脚本对Setup和Portable生成可复算SHA-256", () => {
   const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "a-share-release-manifest-"));
   try {
+    const resolveArtifactName = (template) => template
+      .replace("${productName}", packageJson.build.productName)
+      .replace("${version}", packageJson.version)
+      .replace("${arch}", "x64")
+      .replace("${ext}", "exe");
     const names = [
-      `A股短线模型-Setup-${packageJson.version}-x64.exe`,
-      `A股短线模型-Portable-${packageJson.version}-x64.exe`,
+      resolveArtifactName(packageJson.build.nsis.artifactName),
+      resolveArtifactName(packageJson.build.portable.artifactName),
     ];
     names.forEach((name, index) => fs.writeFileSync(path.join(tempDir, name), `fixture-${index}\n`));
     const shell = process.platform === "win32" ? "pwsh.exe" : "pwsh";
@@ -124,8 +131,8 @@ test("只有通过标签验收的同批安装包才进入发布候选工件", ()
     /success\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\)/,
     /name: windows-release-\$\{\{ github\.ref_name \}\}/,
     /compression-level: 0/,
-    /release\/A股短线模型-Setup-\*-x64\.exe/,
-    /release\/A股短线模型-Portable-\*-x64\.exe/,
+    /release\/A-shares-one-piece-Setup-\*-x64\.exe/,
+    /release\/A-shares-one-piece-Portable-\*-x64\.exe/,
     /release\/SHA256SUMS\.txt/,
     /release\/release-manifest\.json/,
   ]) assert.match(installerWorkflow, pattern);

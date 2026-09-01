@@ -14,7 +14,22 @@ $outputRoot = [IO.Path]::GetFullPath($OutputDir)
 $package = Get-Content -Raw -LiteralPath (Join-Path $projectRoot "package.json") | ConvertFrom-Json
 $version = [string]$package.version
 $productName = [string]$package.build.productName
-$setupPath = Join-Path $releaseRoot "$productName-Setup-$version-x64.exe"
+
+function Resolve-ArtifactName {
+  param([string]$Template)
+
+  $resolved = $Template.Replace('${productName}', $productName)
+  $resolved = $resolved.Replace('${version}', $version)
+  $resolved = $resolved.Replace('${arch}', 'x64')
+  $resolved = $resolved.Replace('${ext}', 'exe')
+  if ($resolved -match '\$\{' -or [IO.Path]::GetFileName($resolved) -ne $resolved) {
+    throw "invalid installer artifact template: $Template"
+  }
+  return $resolved
+}
+
+$setupName = Resolve-ArtifactName ([string]$package.build.nsis.artifactName)
+$setupPath = Join-Path $releaseRoot $setupName
 $reportPath = Join-Path $outputRoot "windows-installer-validation.json"
 $tempBase = if ($env:RUNNER_TEMP) { $env:RUNNER_TEMP } else { $env:TEMP }
 $testRoot = [IO.Path]::GetFullPath((Join-Path $tempBase ("a-share-installer-$version-" + [guid]::NewGuid().ToString("N"))))

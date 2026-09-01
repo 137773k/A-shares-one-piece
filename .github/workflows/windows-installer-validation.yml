@@ -88,7 +88,7 @@ jobs:
           retention-days: 30
           compression-level: 0
           path: |
-            release/A股短线模型-Setup-*-x64.exe
-            release/A股短线模型-Portable-*-x64.exe
+            release/A-shares-one-piece-Setup-*-x64.exe
+            release/A-shares-one-piece-Portable-*-x64.exe
             release/SHA256SUMS.txt
             release/release-manifest.json

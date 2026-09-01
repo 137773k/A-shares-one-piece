@@ -13,9 +13,22 @@ if ($version -notmatch '^\d+\.\d+\.\d+$') {
   throw "package.json version is not a stable semantic version"
 }
 
+function Resolve-ArtifactName {
+  param([string]$Template)
+
+  $resolved = $Template.Replace('${productName}', [string]$package.build.productName)
+  $resolved = $resolved.Replace('${version}', $version)
+  $resolved = $resolved.Replace('${arch}', 'x64')
+  $resolved = $resolved.Replace('${ext}', 'exe')
+  if ($resolved -match '\$\{' -or [IO.Path]::GetFileName($resolved) -ne $resolved) {
+    throw "invalid release artifact template: $Template"
+  }
+  return $resolved
+}
+
 $artifactNames = @(
-  "A股短线模型-Setup-$version-x64.exe",
-  "A股短线模型-Portable-$version-x64.exe"
+  Resolve-ArtifactName ([string]$package.build.nsis.artifactName)
+  Resolve-ArtifactName ([string]$package.build.portable.artifactName)
 )
 $artifacts = foreach ($name in $artifactNames) {
   $filePath = Join-Path $releaseRoot $name
