@@ -64,6 +64,7 @@ test("cycle-history failure keeps current observations but closes execution", ()
   assert.equal(payload.cycleHistoryAvailability.status, "unavailable");
   assert.equal(payload.fetchStatus.level, "partial");
   assert.equal(payload.fetchStatus.evidenceStatus, "incomplete");
+  assert.equal(payload.fetchStatus.marketEvidenceStatus, "complete");
   assert.match(payload.fetchStatus.items.at(-1).note, /structural_cycle_invalid/);
 });
 

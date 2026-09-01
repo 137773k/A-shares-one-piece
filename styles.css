@@ -6483,6 +6483,222 @@ main section[data-view].view-hidden {
   .effect-attribution-head h4 { font-size: 16px; }
 }
 
+.data-management-section {
+  display: grid;
+  gap: 16px;
+}
+
+.data-management-notice {
+  padding: 12px 14px;
+  border: 1px solid #c9ded9;
+  border-radius: 12px;
+  color: #315d57;
+  background: #f2faf7;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.data-management-notice.is-error {
+  border-color: #efc8c8;
+  color: #9d3636;
+  background: #fff5f5;
+}
+
+.data-management-summary,
+.data-management-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.data-management-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.data-management-summary > article,
+.data-management-panel {
+  min-width: 0;
+  border: 1px solid #d8e3e5;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.data-management-summary > article {
+  display: grid;
+  gap: 6px;
+  padding: 15px 16px;
+}
+
+.data-management-summary span,
+.data-management-panel-head span,
+.data-provider-mode-field > span {
+  color: #6c7d83;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.data-management-summary strong {
+  color: #102c35;
+  font-size: 21px;
+}
+
+.data-management-summary small,
+.data-management-help,
+.history-bootstrap-import p {
+  color: #64777d;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.data-management-grid {
+  grid-template-columns: minmax(0, 1.25fr) minmax(320px, 0.75fr);
+}
+
+.data-management-panel {
+  padding: 18px;
+}
+
+.data-management-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.data-management-panel-head h3 {
+  margin: 5px 0 0;
+  color: #122e37;
+  font-size: 20px;
+}
+
+.data-provider-mode-field {
+  display: grid;
+  gap: 7px;
+  margin-bottom: 14px;
+}
+
+.data-provider-mode-field select,
+.data-provider-module-row input[type="number"],
+.data-provider-module-row input[type="text"] {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid #cbdadc;
+  border-radius: 9px;
+  color: #18343c;
+  background: #fff;
+  font: inherit;
+}
+
+.data-provider-module-list {
+  display: grid;
+  gap: 10px;
+}
+
+.data-provider-module-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) 105px minmax(190px, 1.3fr);
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid #dbe5e7;
+  border-radius: 11px;
+  background: #f8fbfb;
+}
+
+.data-provider-module-toggle,
+.data-provider-module-field {
+  display: grid;
+  gap: 6px;
+  color: #536b72;
+  font-size: 12px;
+}
+
+.data-provider-module-toggle {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  align-self: center;
+  color: #18343c;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.data-management-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.data-management-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  color: #8c6412;
+  background: #fff1ce;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.data-management-badge.is-ready {
+  color: #087366;
+  background: #e1f4ef;
+}
+
+.history-bootstrap-missing,
+.history-bootstrap-import {
+  margin-top: 12px;
+  padding: 12px 13px;
+  border: 1px dashed #d5e1e3;
+  border-radius: 10px;
+  color: #4c666d;
+  background: #fafcfc;
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.history-bootstrap-missing:empty {
+  display: none;
+}
+
+.history-bootstrap-import strong {
+  color: #18343c;
+}
+
+.history-bootstrap-import p {
+  margin: 7px 0;
+}
+
+.data-management-warning {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border-radius: 9px;
+  color: #8c6412;
+  background: #fff8e8;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+@media (max-width: 1050px) {
+  .data-management-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .data-management-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 680px) {
+  .data-management-summary {
+    grid-template-columns: 1fr;
+  }
+  .data-provider-module-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .decision-note { color: #7a828c; font-size: 13px; margin: 6px 0; }
 
 .decision-picks-note { font-weight: 800; color: #8a6d00; }

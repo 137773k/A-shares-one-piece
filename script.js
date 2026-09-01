@@ -38831,6 +38831,9 @@ async function loadHotStocksLegacyRequest() {
       renderHotStocks(payload);
       setDecisionAuthority("local", payload);
       loadRealtime();
+      if (typeof document !== "undefined" && document.querySelector("#data-management")) {
+        loadDataManagementStatus().catch(() => {});
+      }
       const directBuyFresh = url === "/api/hot-stocks"
         && payload.servedFromCache !== true
         && payload.backgroundRefresh !== true
@@ -38959,6 +38962,9 @@ async function loadHotStocksRefreshCache(options = {}) {
   renderHotStocks(payload);
   setDecisionAuthority("local", payload);
   loadRealtime();
+  if (typeof document !== "undefined" && document.querySelector("#data-management")) {
+    loadDataManagementStatus().catch(() => {});
+  }
   setPremarketDirectBuyPayloadFresh(payload, directBuyEligible);
   try {
     renderPremarketFlow(payload);
@@ -49252,6 +49258,187 @@ if (themeLibraryRefreshBtn) {
       themeLibraryRefreshBtn.textContent = originalLabel;
     }
   });
+}
+
+let dataManagementState = null;
+
+function setDataManagementNotice(message, isError = false) {
+  const node = document.querySelector("#dataManagementNotice");
+  if (!node) return;
+  node.textContent = String(message || "");
+  node.classList.toggle("is-error", isError);
+}
+
+function renderDataProviderModules(settings = {}) {
+  const container = document.querySelector("#dataProviderModuleList");
+  if (!container) return;
+  const configured = Array.isArray(settings.providers) ? settings.providers : [];
+  const configuredByModule = new Map(configured.map((entry) => [String(entry.module || ""), entry]));
+  const modules = Array.from(new Set([
+    ...(Array.isArray(settings.availableModules) ? settings.availableModules : []),
+    ...configured.map((entry) => entry.module),
+  ].map((entry) => String(entry || "").trim()).filter(Boolean))).sort();
+  if (!modules.length) {
+    container.innerHTML = '<div class="empty-state">尚未发现自定义适配器。当前会使用免费保底源；如需替换，请先把 .cjs 文件放入 data/providers。</div>';
+    return;
+  }
+  container.innerHTML = modules.map((moduleName) => {
+    const entry = configuredByModule.get(moduleName) || {};
+    const isAvailable = (settings.availableModules || []).includes(moduleName);
+    return `
+      <div class="data-provider-module-row" data-provider-module="${escapeHtml(moduleName)}" data-provider-available="${isAvailable ? "true" : "false"}">
+        <label class="data-provider-module-toggle">
+          <input type="checkbox" data-provider-enabled ${entry.enabled === true ? "checked" : ""} ${isAvailable ? "" : "disabled"} />
+          <span>${escapeHtml(moduleName)}${isAvailable ? "" : "（模块缺失）"}</span>
+        </label>
+        <label class="data-provider-module-field">
+          <span>优先级</span>
+          <input type="number" min="-1000" max="10000" step="1" value="${Number.isInteger(Number(entry.priority)) ? Number(entry.priority) : 100}" data-provider-priority ${isAvailable ? "" : "disabled"} />
+        </label>
+        <label class="data-provider-module-field">
+          <span>凭据环境变量名（逗号分隔）</span>
+          <input type="text" value="${escapeHtml(Array.isArray(entry.credentialEnv) ? entry.credentialEnv.join(", ") : "")}" placeholder="例如 MY_MARKET_DATA_TOKEN" data-provider-credential-env ${isAvailable ? "" : "disabled"} />
+        </label>
+      </div>`;
+  }).join("");
+}
+
+function renderDataManagement(payload) {
+  const dataProviders = payload && payload.dataProviders || {};
+  const settings = dataProviders.settings || {};
+  const diagnostics = dataProviders.configuration || {};
+  const history = dataProviders.history || {};
+  dataManagementState = { dataProviders, settings, history };
+
+  const mode = document.querySelector("#dataProviderMode");
+  const fallback = document.querySelector("#dataProviderFallback");
+  const enabled = document.querySelector("#dataProviderEnabledCount");
+  const moduleCount = document.querySelector("#dataProviderModuleCount");
+  const modeSelect = document.querySelector("#dataProviderModeSelect");
+  if (mode) mode.textContent = settings.mode === "custom_first" ? "自定义源优先" : "免费保底自动模式";
+  if (fallback) fallback.textContent = diagnostics.freeFallbackEnabled === false ? "免费保底源已关闭" : "免费保底源已启用";
+  if (enabled) enabled.textContent = `${Number(diagnostics.enabledCount || 0)} 个已启用`;
+  if (moduleCount) moduleCount.textContent = `发现 ${Array.isArray(settings.availableModules) ? settings.availableModules.length : 0} 个本机模块`;
+  if (modeSelect) modeSelect.value = settings.mode === "custom_first" ? "custom_first" : "auto";
+  renderDataProviderModules(settings);
+
+  const coverage = document.querySelector("#historyBootstrapCoverage");
+  const state = document.querySelector("#historyBootstrapState");
+  const badge = document.querySelector("#historyBootstrapBadge");
+  const note = document.querySelector("#historyBootstrapNote");
+  const missing = document.querySelector("#historyBootstrapMissing");
+  const pending = document.querySelector("#historyBootstrapPending");
+  if (coverage) coverage.textContent = `${Number(history.availableDays || 0)} / ${Number(history.requiredDays || 5)}`;
+  if (state) state.textContent = history.ready === true ? "连续严格历史已就绪" : "不足时大周期保持未确认";
+  if (badge) {
+    badge.textContent = history.ready === true ? "已就绪" : history.status === "collecting" ? "积累中" : "待积累";
+    badge.classList.toggle("is-ready", history.ready === true);
+    badge.classList.toggle("is-waiting", history.ready !== true);
+  }
+  if (note) note.textContent = history.note || "历史状态待确认";
+  if (missing) {
+    const missingDates = Array.isArray(history.missingDates) ? history.missingDates : [];
+    missing.textContent = missingDates.length ? `缺失或未通过严格收盘门：${missingDates.join("、")}` : "";
+  }
+  if (pending) pending.textContent = `待导入文件：${Number(history.import && history.import.pendingFiles || 0)}`;
+
+  const errors = Array.from(new Set([
+    ...(Array.isArray(diagnostics.errors) ? diagnostics.errors : []),
+    ...(Array.isArray(settings.errors) ? settings.errors : []),
+  ]));
+  setDataManagementNotice(errors.length
+    ? `数据源配置存在问题：${errors.join("；")}`
+    : "数据层状态已读取。替换数据源只改变证据入口，不会改变冻结决策引擎。", errors.length > 0);
+}
+
+async function loadDataManagementStatus() {
+  const response = await fetch("/api/data-providers/status", { cache: "no-store" });
+  const payload = await response.json();
+  if (!response.ok || !payload.ok) throw new Error(payload.error || "数据管理状态读取失败");
+  renderDataManagement(payload);
+  return payload;
+}
+
+function collectDataProviderConfiguration() {
+  const mode = document.querySelector("#dataProviderModeSelect");
+  const providers = Array.from(document.querySelectorAll("[data-provider-module]"))
+    .filter((row) => row.dataset.providerAvailable === "true")
+    .map((row) => {
+    const credentialInput = row.querySelector("[data-provider-credential-env]");
+    return {
+      module: String(row.dataset.providerModule || ""),
+      enabled: row.querySelector("[data-provider-enabled]") && row.querySelector("[data-provider-enabled]").checked === true,
+      priority: Number(row.querySelector("[data-provider-priority]") && row.querySelector("[data-provider-priority]").value || 100),
+      credentialEnv: String(credentialInput && credentialInput.value || "")
+        .split(/[,，\s]+/).map((entry) => entry.trim()).filter(Boolean),
+    };
+    });
+  return {
+    mode: mode && mode.value === "custom_first" ? "custom_first" : "auto",
+    providers,
+  };
+}
+
+async function saveDataProviderConfiguration() {
+  const button = document.querySelector("#dataProviderSaveBtn");
+  if (button) button.disabled = true;
+  setDataManagementNotice("正在保存并重载数据源…");
+  try {
+    const response = await fetch("/api/data-providers/configuration", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-A-Share-Local-Intent": "data-management-v1",
+      },
+      body: JSON.stringify(collectDataProviderConfiguration()),
+    });
+    const payload = await response.json();
+    if (!response.ok || !payload.ok) throw new Error(payload.error || "数据源配置保存失败");
+    renderDataManagement({ ok: true, dataProviders: payload.dataProviders });
+    setDataManagementNotice("数据源配置已保存并在本机重载；下一次抓取会按新优先级调用。", false);
+  } catch (error) {
+    setDataManagementNotice(error.message || "数据源配置保存失败", true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+async function importHistoryBootstrapFromInbox() {
+  const pending = Number(dataManagementState && dataManagementState.history
+    && dataManagementState.history.import && dataManagementState.history.import.pendingFiles || 0);
+  if (!pending) {
+    setDataManagementNotice("data/history-import 中没有可扫描的 YYYY-MM-DD.json。", true);
+    return;
+  }
+  if (!window.confirm("只会导入通过严格收盘证据门且决策凭证可回验的归档；同日已有不同文件时不会覆盖。继续吗？")) return;
+  const button = document.querySelector("#historyBootstrapImportBtn");
+  if (button) button.disabled = true;
+  setDataManagementNotice("正在校验历史归档…");
+  try {
+    const response = await fetch("/api/history-bootstrap/import", {
+      method: "POST",
+      headers: { "X-A-Share-Local-Intent": "data-management-v1" },
+    });
+    const payload = await response.json();
+    const result = payload.historyImport || {};
+    await loadDataManagementStatus();
+    const message = `历史校验完成：导入 ${Number(result.importedCount || 0)} 份，拒绝/冲突 ${Number(result.rejectedCount || 0)} 份。`;
+    setDataManagementNotice(message, !response.ok || result.rejectedCount > 0);
+  } catch (error) {
+    setDataManagementNotice(error.message || "历史导入失败", true);
+  } finally {
+    if (button) button.disabled = false;
+  }
+}
+
+const dataProviderRefreshBtn = document.querySelector("#dataProviderRefreshBtn");
+const dataProviderSaveBtn = document.querySelector("#dataProviderSaveBtn");
+const historyBootstrapImportBtn = document.querySelector("#historyBootstrapImportBtn");
+if (dataProviderRefreshBtn) dataProviderRefreshBtn.addEventListener("click", () => loadDataManagementStatus().catch((error) => setDataManagementNotice(error.message, true)));
+if (dataProviderSaveBtn) dataProviderSaveBtn.addEventListener("click", saveDataProviderConfiguration);
+if (historyBootstrapImportBtn) historyBootstrapImportBtn.addEventListener("click", importHistoryBootstrapFromInbox);
+if (document.querySelector("#data-management")) {
+  loadDataManagementStatus().catch((error) => setDataManagementNotice(error.message || "数据管理状态读取失败", true));
 }
 
 initializeWorkflowNavigation();

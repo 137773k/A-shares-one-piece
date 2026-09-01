@@ -38,6 +38,8 @@ test("发布包启用ASAR且只解包必要的行情子进程", () => {
 test("桌面版只复制数据源配置示例并创建本地适配器目录", () => {
   assert.match(source, /provider-config\.example\.json/);
   assert.match(source, /path\.join\(runtimeData, "providers"\)/);
+  assert.match(source, /path\.join\(runtimeData, "history-import"\)/);
   assert.doesNotMatch(source, /copyFileSync\([^\n]*provider-config\.json/);
   assert.match(source, /打开数据源目录/);
+  assert.match(source, /打开历史导入目录/);
 });

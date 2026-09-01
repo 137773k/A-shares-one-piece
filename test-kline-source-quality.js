@@ -9,6 +9,7 @@ const { buildFetchStatus, fetchTencentKlineRows, strictExactClosingEvidence } = 
 const {
   createKlineSourceStats,
   summarizeKlineProfileScope,
+  detectKlineStructuralExclusion,
   klineCircuitShouldAttempt,
   recordKlineSourceFailure,
   recordKlineSourceSuccess,
@@ -21,6 +22,69 @@ const {
   prioritizeKlineProfileFetchRows,
   enrichKlineProfiles,
 } = server.klineQualityInternals;
+
+test("上市不足3日的新股退出正式K线分母，普通股票缺K线仍算失败", () => {
+  const oneDayRows = [{ date: "2026-08-27", close: 12.3 }];
+  const twoDayRows = [
+    { date: "2026-08-26", close: 11.2 },
+    { date: "2026-08-27", close: 12.3 },
+  ];
+  const nameDetected = detectKlineStructuralExclusion({ code: "920001", name: "N测试" }, oneDayRows);
+  const flagDetected = detectKlineStructuralExclusion({ code: "920002", name: "测试", isNewListing: true }, twoDayRows);
+
+  assert.equal(nameDetected.reasonCode, "listing_history_below_profile_minimum");
+  assert.equal(nameDetected.tradingDays, 1);
+  assert.equal(nameDetected.marketEvidenceImpact, false);
+  assert.equal(flagDetected.tradingDays, 2);
+  assert.equal(detectKlineStructuralExclusion({ code: "000001", name: "平安银行" }, oneDayRows), null);
+  assert.equal(detectKlineStructuralExclusion({ code: "920001", name: "N测试" }, []), null);
+});
+
+test("结构性新股样本不阻断市场K线闭环并保留可审计原因", () => {
+  const marketRows = [
+    { code: "000001", name: "平安银行", klineProfile: completeProfile(), klineProfileLineage: { mode: "live", source: "tencent" } },
+    {
+      code: "920001",
+      name: "N测试",
+      klineProfile: null,
+      klineProfileLineage: { mode: "structural_exclusion", liveFetchFailed: false },
+      klineStructuralExclusion: {
+        reasonCode: "listing_history_below_profile_minimum",
+        tradingDays: 1,
+        requiredTradingDays: 3,
+        marketEvidenceImpact: false,
+        observationOnly: true,
+        executionAuthority: false,
+      },
+    },
+  ];
+  const marketScope = summarizeKlineProfileScope(marketRows);
+  const status = buildFetchStatus(fullFetchContext({
+    total: 2,
+    klineOk: 1,
+    klineRequested: marketScope.requested,
+    klineLiveAccepted: marketScope.liveAccepted,
+    klineEast: marketScope.east,
+    klineTencent: marketScope.tencent,
+    klineCached: marketScope.cached,
+    klineSameDayCache: marketScope.sameDayCache,
+    klineUnavailable: marketScope.unavailable,
+    klineStructuralExcluded: marketScope.structuralExcluded,
+    klineStructuralExclusionSamples: marketScope.structuralExclusionSamples,
+    klineLiveFailed: marketScope.fail,
+    klineSupplemental: summarizeKlineProfileScope([]),
+  }));
+
+  assert.equal(marketScope.totalObserved, 2);
+  assert.equal(marketScope.requested, 1);
+  assert.equal(marketScope.unavailable, 0);
+  assert.equal(marketScope.structuralExcluded, 1);
+  assert.equal(status.mode, "live_complete");
+  assert.equal(status.evidenceStatus, "complete");
+  assert.equal(status.kline.marketScope.requestedCount, 1);
+  assert.equal(status.kline.marketScope.structuralExcludedCount, 1);
+  assert.match(status.items.find((item) => item.name === "K线/均线").note, /上市不足3日/);
+});
 
 test("补充观察票缺K线不再取消正式市场的大周期收盘证据", () => {
   const marketRows = [
@@ -281,6 +345,125 @@ test("K线抓取可以改变请求顺序但必须保持候选输出原始顺序"
   assert.deepEqual(enriched.map((row) => row.code), rows.map((row) => row.code));
   assert.deepEqual(enriched.map((row) => row.klineProfile.marker), rows.map((row) => row.code));
   assert.equal(enriched.some((row) => Object.hasOwn(row, "__klineOriginalIndex")), false);
+});
+
+test("周期历史缺失只关闭执行，已完整的收盘市场证据仍可用于首次安装积累", () => {
+  const status = buildFetchStatus(fullFetchContext());
+  const payload = {
+    fetchedAt: "2026-08-27T07:10:00.000Z",
+    updatedAt: "2026-08-27T07:10:00.000Z",
+    asOf: "2026-08-27T07:10:00.000Z",
+    tradingDate: "2026-08-27",
+    generationId: "2026-08-27:2026-08-27T07:10:00.000Z",
+    generationContext: {
+      version: 1,
+      tradingDate: "2026-08-27",
+      asOf: "2026-08-27T07:10:00.000Z",
+      generationId: "2026-08-27:2026-08-27T07:10:00.000Z",
+    },
+    market: { limitStats: { dates: { today: "20260827", prev: "20260826", verified: true } } },
+    fetchStatus: { ...status, marketEvidenceStatus: "complete", evidenceStatus: "incomplete" },
+    archiveMeta: { tradingDate: "2026-08-27", snapshotKind: "closing" },
+  };
+  const strict = strictExactClosingEvidence(payload, "2026-08-27");
+  assert.equal(strict.ok, true);
+  assert.equal(strict.fetchEvidenceQuality.marketOnly, true);
+  assert.equal(resolveFetchEvidenceQuality(payload, "2026-08-27").closingEvidenceUsable, false);
+});
+
+test("百只以上正式样本仅缺1只非关键尾部票时保留缺口但不取消市场聚合", () => {
+  const marketRows = Array.from({ length: 130 }, (_, index) => ({
+    code: String(index + 1).padStart(6, "0"),
+    name: `样本${index + 1}`,
+    combinedRank: index + 1,
+    inBothSources: index < 20,
+    changePct: index === 129 ? -7.02 : 1,
+    klineProfile: index === 129 ? null : completeProfile(),
+    klineProfileLineage: index === 129
+      ? { mode: "live_same_day_cache_incomplete", liveFetchFailed: true }
+      : { mode: "live", source: "tencent" },
+  }));
+  const marketScope = summarizeKlineProfileScope(marketRows);
+  const status = buildFetchStatus(fullFetchContext({
+    total: marketRows.length,
+    klineOk: marketScope.liveAccepted,
+    klineRequested: marketScope.requested,
+    klineLiveAccepted: marketScope.liveAccepted,
+    klineEast: marketScope.east,
+    klineTencent: marketScope.tencent,
+    klineSameDayCache: marketScope.sameDayCache,
+    klineUnavailable: marketScope.unavailable,
+    klineUnavailableSamples: marketScope.unavailableSamples,
+    klineCriticalUnavailable: marketScope.criticalUnavailable,
+    klineLiveFailed: marketScope.fail,
+    klineSupplemental: summarizeKlineProfileScope([]),
+  }));
+
+  assert.equal(marketScope.unavailable, 1);
+  assert.equal(marketScope.criticalUnavailable, 0);
+  assert.equal(status.mode, "live_bounded_coverage");
+  assert.equal(status.kline.boundedCoverageAccepted, true);
+  assert.equal(status.kline.coverageRatio >= 0.99, true);
+  assert.equal(status.evidenceStatus, "complete");
+  const quality = resolveFetchEvidenceQuality({ fetchStatus: status }, "2026-08-27");
+  assert.equal(quality.closingEvidenceUsable, true);
+  assert.equal(quality.boundedCoverageAccepted, true);
+});
+
+test("缺失前20热榜、双榜共振或极端反馈样本时仍严格关闭", () => {
+  const rows = Array.from({ length: 130 }, (_, index) => ({
+    code: String(index + 1).padStart(6, "0"),
+    name: `样本${index + 1}`,
+    combinedRank: index + 1,
+    inBothSources: index === 9,
+    changePct: 1,
+    klineProfile: index === 9 ? null : completeProfile(),
+    klineProfileLineage: index === 9
+      ? { mode: "unavailable", liveFetchFailed: true }
+      : { mode: "live", source: "tencent" },
+  }));
+  const scope = summarizeKlineProfileScope(rows);
+  const status = buildFetchStatus(fullFetchContext({
+    total: rows.length,
+    klineOk: scope.liveAccepted,
+    klineRequested: scope.requested,
+    klineLiveAccepted: scope.liveAccepted,
+    klineEast: scope.east,
+    klineTencent: scope.tencent,
+    klineUnavailable: scope.unavailable,
+    klineUnavailableSamples: scope.unavailableSamples,
+    klineCriticalUnavailable: scope.criticalUnavailable,
+    klineLiveFailed: scope.fail,
+    klineSupplemental: summarizeKlineProfileScope([]),
+  }));
+
+  assert.equal(scope.criticalUnavailable, 1);
+  assert.equal(status.mode, "unavailable");
+  assert.equal(status.kline.boundedCoverageAccepted, false);
+  assert.equal(resolveFetchEvidenceQuality({ fetchStatus: status }, "2026-08-27").closingEvidenceUsable, false);
+});
+
+test("新股结构性短历史不会被登记成K线抓取失败", async () => {
+  const stats = createKlineSourceStats();
+  stats.deadlineAt = Date.now() + 10_000;
+  const enriched = await enrichKlineProfiles([{ code: "920001", name: "N测试" }], stats, {
+    _fetchProfile: async (stock) => {
+      stock.klineStructuralExclusion = {
+        reasonCode: "listing_history_below_profile_minimum",
+        tradingDays: 1,
+        requiredTradingDays: 3,
+        marketEvidenceImpact: false,
+        observationOnly: true,
+        executionAuthority: false,
+      };
+      return null;
+    },
+  });
+
+  assert.equal(stats.profileFailures || 0, 0);
+  assert.equal(stats.structuralExcluded, 1);
+  assert.equal(enriched[0].klineProfile, null);
+  assert.equal(enriched[0].klineStructuralExclusion.reasonCode, "listing_history_below_profile_minimum");
 });
 
 test("全量同日缓存时源健康为partial，但收盘证据仍完整可用", () => {
