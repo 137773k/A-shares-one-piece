@@ -30,6 +30,14 @@ const {
   runFactorEffectivenessValidation,
 } = require("./factor-effectiveness-validation");
 
+const PRIVATE_HISTORY_DIR = path.join(__dirname, "data", "history");
+const PRIVATE_HISTORY_AVAILABLE = fs.existsSync(PRIVATE_HISTORY_DIR);
+const privateHistoryTestOptions = {
+  skip: PRIVATE_HISTORY_AVAILABLE
+    ? false
+    : "公开仓库不携带私有历史行情夹具；历史回放仅在私有归档环境执行",
+};
+
 test("交易日以供应商日期为准，文件名不能替代交易日", () => {
   assert.equal(normalizeTradingDate("20260821"), "2026-08-21");
   assert.equal(normalizeTradingDate("2026-08-21"), "2026-08-21");
@@ -71,8 +79,8 @@ test("重复交易日记录失败关闭，不能由Map静默选择其中一份",
   assert(result.unmatched.every((row) => row.reason === "duplicate_trading_date_snapshot"));
 });
 
-test("历史v5/v6迁移只接收同日收盘双榜元数据，并保持原始快照不变", () => {
-  const loaded = loadHistoricalSnapshots(path.join(__dirname, "data", "history"));
+test("历史v5/v6迁移只接收同日收盘双榜元数据，并保持原始快照不变", privateHistoryTestOptions, () => {
+  const loaded = loadHistoricalSnapshots(PRIVATE_HISTORY_DIR);
   const eligibleRecord = loaded.records.find((record) => record.tradingDate === "2026-08-11");
   assert(loaded.rejected.some((row) => row.fileName === "2026-07-12.json"
     && row.reason === "filename_trading_date_mismatch"));
@@ -85,7 +93,7 @@ test("历史v5/v6迁移只接收同日收盘双榜元数据，并保持原始快
   assert.equal(migrated.payload.themeLibrary.sourceMode, "historical-validation-reconstruction");
   assert.equal(JSON.stringify(eligibleRecord.snapshot), before, "迁移不得修改原始历史快照");
 
-  const legacySnapshot = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "history", "2026-07-12.json"), "utf8"));
+  const legacySnapshot = JSON.parse(fs.readFileSync(path.join(PRIVATE_HISTORY_DIR, "2026-07-12.json"), "utf8"));
   const rejected = migrateHistoricalClosingSnapshot({
     tradingDate: "2026-07-10",
     fileName: "2026-07-12.json",
@@ -212,8 +220,8 @@ test("评估固定Top3且不能仅凭样本数确认策略有效", () => {
   assert.equal(assessment.effectivenessConfirmed, false);
 });
 
-test("T-1布尔条件全通过但权威来源伪造时仍失败关闭", () => {
-  const load = (date) => JSON.parse(fs.readFileSync(path.join(__dirname, "data", "history", `${date}.json`), "utf8"));
+test("T-1布尔条件全通过但权威来源伪造时仍失败关闭", privateHistoryTestOptions, () => {
+  const load = (date) => JSON.parse(fs.readFileSync(path.join(PRIVATE_HISTORY_DIR, `${date}.json`), "utf8"));
   const payload = replayHistoricalCounterfactualDecision(load("2026-08-20"), load("2026-08-19"), null, true);
   const valid = validateCounterfactualDecisionReplay(payload, "2026-08-20", "2026-08-19");
   assert.equal(valid.replayReady, true);
@@ -226,8 +234,8 @@ test("T-1布尔条件全通过但权威来源伪造时仍失败关闭", () => {
   assert(forged.blockers.includes("exact_t1_emotion_authority_mismatch"));
 });
 
-test("validationOnly 固定旧 selected 短名单，正式执行默认行为保持隔离", () => {
-  const snapshot = JSON.parse(fs.readFileSync(path.join(__dirname, "data", "history", "2026-07-14.json"), "utf8"));
+test("validationOnly 固定旧 selected 短名单，正式执行默认行为保持隔离", privateHistoryTestOptions, () => {
+  const snapshot = JSON.parse(fs.readFileSync(path.join(PRIVATE_HISTORY_DIR, "2026-07-14.json"), "utf8"));
   const candidates = JSON.parse(JSON.stringify(snapshot.candidates));
   _internals.refreshCandidateFlowAndGate(candidates, snapshot.market.state, snapshot.market.limitStats);
   const result = _internals.buildBestPicks(
@@ -331,8 +339,8 @@ test("消融研究只改变一个分量并报告真实换票，不因单日结�
   assert.equal(calibration.currentParameters.marketAmountThresholdYi, 25000);
 });
 
-test("本地历史回放生成审计报告，但样本不足时绝不确认有效", () => {
-  const historyDir = path.join(__dirname, "data", "history");
+test("本地历史回放生成审计报告，但样本不足时绝不确认有效", privateHistoryTestOptions, () => {
+  const historyDir = PRIVATE_HISTORY_DIR;
   const historyHashes = new Map(fs.readdirSync(historyDir)
     .filter((name) => /^20\d{2}-\d{2}-\d{2}\.json$/.test(name))
     .map((name) => [name, crypto.createHash("sha256").update(fs.readFileSync(path.join(historyDir, name))).digest("hex")]));

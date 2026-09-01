@@ -320,6 +320,12 @@ function buildHistoricalMigrationAudit(records) {
 }
 
 function loadHistoricalSnapshots(historyDir) {
+  if (!fs.existsSync(historyDir)) {
+    return {
+      records: [],
+      rejected: [{ fileName: null, reason: "history_directory_missing" }],
+    };
+  }
   const files = fs.readdirSync(historyDir)
     .filter((name) => /^20\d{2}-\d{2}-\d{2}\.json$/.test(name))
     .sort();
