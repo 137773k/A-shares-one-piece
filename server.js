@@ -77081,7 +77081,12 @@ function createFreeFallbackMarketDataProvider() {
     fetchQuotes: (stocks) => fetchEastmoneyQuotes(stocks),
     fetchDailyKline: (stock, limit, stats) => fetchKlineRowsFreeFallback(stock, limit, stats),
     fetchSectors: () => fetchEastmoneySectors(),
-    fetchStockNews: (code) => fetchStockNews(code),
+    fetchStockEvidence: async (stocks) => {
+      await enrichEvidence(stocks);
+      return stocks.map((stock) => ({ code: stock.code, evidence: stock.evidence || null }));
+    },
+    fetchIntradayLeadership: (...args) => fetchIntradayLeadershipProfiles(...args),
+    fetchStockNews: (code, limit) => fetchStockNews(code, limit),
   });
 }
 
@@ -78432,7 +78437,19 @@ async function hotStocksPayload(options = {}) {
 
 
     persistFreshKlineProfiles(profiled);
-    await enrichEvidence(marketProfiled);
+    const evidenceProviderResult = await requiredProviderCapability(
+      providerRegistry,
+      DATA_CAPABILITIES.STOCK_EVIDENCE,
+      [marketProfiled],
+      { observedAt: nowIso() },
+    );
+    const evidenceByCode = new Map((Array.isArray(evidenceProviderResult.envelope.data)
+      ? evidenceProviderResult.envelope.data : []).map((row) => [String(row && row.code || ""), row && row.evidence]));
+    marketProfiled.forEach((stock) => {
+      const evidence = evidenceByCode.get(String(stock && stock.code || ""));
+      if (evidence && typeof evidence === "object") stock.evidence = evidence;
+    });
+    dataProviderEnvelopes.push(evidenceProviderResult.envelope);
 
 
 
@@ -78925,13 +78942,17 @@ async function hotStocksPayload(options = {}) {
       }),
       30,
     );
-    const intradayLeadership = await fetchIntradayLeadershipProfiles(
-      candidates,
-      topicBoard,
-      leadershipTradingDate,
-      klineStats,
-      { targets: leadershipTargets },
+    const leadershipProviderResult = await requiredProviderCapability(
+      providerRegistry,
+      DATA_CAPABILITIES.INTRADAY_LEADERSHIP,
+      [candidates, topicBoard, leadershipTradingDate, klineStats, { targets: leadershipTargets }],
+      {
+        observedAt: nowIso(),
+        tradingDate: leadershipTradingDate,
+        expectedTradingDate: leadershipTradingDate,
+      },
     );
+    const intradayLeadership = leadershipProviderResult.envelope.data;
     const initiativeFloorByCode = loadVerifiedInitiativeFloors(leadershipTradingDate);
     let leadershipBoard = buildCoreLeadershipBoard({
       candidates,
@@ -79305,7 +79326,13 @@ async function hotStocksPayload(options = {}) {
 
 
 
-      const feed = await fetchStockNews(item.code, 6);
+      const stockNewsProviderResult = await requiredProviderCapability(
+        providerRegistry,
+        DATA_CAPABILITIES.STOCK_NEWS,
+        [item.code, 6],
+        { observedAt: nowIso() },
+      );
+      const feed = stockNewsProviderResult.envelope.data;
 
 
 

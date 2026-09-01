@@ -50,6 +50,9 @@ test("默认注册表提供现有免费保底源且不授予执行权", () => {
     CAPABILITIES.DAILY_KLINE,
     CAPABILITIES.QUOTES,
     CAPABILITIES.SECTORS,
+    CAPABILITIES.STOCK_EVIDENCE,
+    CAPABILITIES.INTRADAY_LEADERSHIP,
+    CAPABILITIES.STOCK_NEWS,
   ]) assert(providers[0].capabilities.includes(capability), capability);
 });
 
