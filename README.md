@@ -11,7 +11,7 @@
 
 安装包已经包含 Electron、Chromium 和 Node.js。普通用户不需要安装 Git、Node.js、npm、Python、AKShare，也不需要配置云端账号。
 
-下载后请先使用同一 Release 中的 `SHA256SUMS.txt` 核对文件哈希。当前候选安装包尚未购买数字签名证书，不应在公开发布前把它描述成“已签名可信软件”。
+下载后请先使用同一 Release 中的 `SHA256SUMS.txt` 核对文件哈希。当前发布包尚未购买数字签名证书，不应把它描述成“已签名可信软件”。
 
 ## 第一次启动
 
