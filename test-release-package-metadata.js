@@ -12,6 +12,14 @@ const root = __dirname;
 const packageJson = JSON.parse(fs.readFileSync(path.join(root, "package.json"), "utf8"));
 const packageLock = JSON.parse(fs.readFileSync(path.join(root, "package-lock.json"), "utf8"));
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
+const installerValidation = fs.readFileSync(
+  path.join(root, "release-tools", "Test-WindowsInstaller.ps1"),
+  "utf8",
+);
+const installerWorkflow = fs.readFileSync(
+  path.join(root, ".github", "workflows", "windows-installer-validation.yml"),
+  "utf8",
+);
 
 test("1.2.0发布元数据、Node边界和安装包名称保持一致", () => {
   assert.equal(packageJson.version, "1.2.0");
@@ -66,4 +74,41 @@ test("发布清单脚本对Setup和Portable生成可复算SHA-256", () => {
   } finally {
     fs.rmSync(tempDir, { recursive: true, force: true });
   }
+});
+
+test("Windows安装验收覆盖干净机、两次启动、数据隔离和卸载残留", () => {
+  for (const pattern of [
+    /clean Windows runner required/,
+    /\/S/,
+    /--user-data-dir=/,
+    /api\/cloud-current-sync\/status/,
+    /cloud\.sync\.configured -ne \$false/,
+    /historyCount -ne 0/,
+    /releaseManifestMatches/,
+    /setupSha256/,
+    /RunNumber 2/,
+    /runtimePersistsAcrossRestart/,
+    /Uninstall\*\.exe/,
+    /installDirectoryRemoved/,
+    /uninstallEntryRemoved/,
+    /shortcutsRemoved/,
+  ]) assert.match(installerValidation, pattern);
+});
+
+test("GitHub工作流以只读权限在临时Windows机器构建并执行安装验收", () => {
+  for (const pattern of [
+    /runs-on: windows-latest/,
+    /timeout-minutes: 30/,
+    /permissions:\s+contents: read/,
+    /fetch-depth: 0/,
+    /node-version: "22\.12\.0"/,
+    /npm run test:quant-decision/,
+    /npm test/,
+    /npm run desktop:dist/,
+    /Build-ReleaseManifest\.ps1/,
+    /Test-WindowsInstaller\.ps1/,
+    /actions\/upload-artifact@v4/,
+  ]) assert.match(installerWorkflow, pattern);
+  assert.doesNotMatch(installerWorkflow, /secrets\./);
+  assert.doesNotMatch(installerWorkflow, /A股短线模型-(?:Setup|Portable).*\.exe\s*$/m);
 });

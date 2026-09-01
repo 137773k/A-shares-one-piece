@@ -13,6 +13,7 @@ data/
 .playwright-cli/
 output/
 release/
+release-validation-output/
 api_debug.json
 output-model-smoke.json
 expo-app/assets/icon-source-*.jpg

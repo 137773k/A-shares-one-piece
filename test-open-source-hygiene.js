@@ -17,6 +17,7 @@ const repositoryOnlyArtifacts = [
   ".eastmoney-hshq.js",
   ".eastmoney-index.js",
   ".stock_shichang.js",
+  "release-validation-output/windows-installer-validation.json",
   ".claude_task.txt",
   ".claude_task_theme.txt",
   ".claude_task_v11_asym.txt",
