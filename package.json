@@ -55,14 +55,14 @@
     "desktop:dist": "electron-builder --win --x64"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "ws": "^8.21.3"
   },
   "devDependencies": {
-    "electron": "^37.2.3",
-    "electron-builder": "^26.0.12"
+    "electron": "^44.1.0",
+    "electron-builder": "^26.15.3"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=22.12.0"
   },
   "build": {
     "appId": "com.ashare.tradingmodel",
@@ -101,11 +101,15 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         },
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },

@@ -20,6 +20,27 @@ function logStage(message) {
   } catch {}
 }
 
+function parsedUrl(value) {
+  try {
+    return new URL(String(value || ""));
+  } catch {
+    return null;
+  }
+}
+
+function isTrustedLocalUrl(value, allowedBaseUrl) {
+  const target = parsedUrl(value);
+  const allowed = parsedUrl(allowedBaseUrl);
+  return Boolean(target && allowed && target.origin === allowed.origin);
+}
+
+function openExternalHttps(value) {
+  const target = parsedUrl(value);
+  if (!target || target.protocol !== "https:") return false;
+  shell.openExternal(target.toString()).catch(() => {});
+  return true;
+}
+
 logStage(`main loaded: ${__dirname}`);
 process.on("uncaughtException", (error) => logStage(`uncaughtException: ${error && error.stack ? error.stack : error}`));
 process.on("unhandledRejection", (error) => logStage(`unhandledRejection: ${error && error.stack ? error.stack : error}`));
@@ -181,16 +202,22 @@ async function createDesktopApp() {
   logStage("browser window created");
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith(localUrl)) return { action: "allow" };
-    shell.openExternal(url).catch(() => {});
+    if (isTrustedLocalUrl(url, localUrl)) mainWindow.loadURL(url).catch(() => {});
+    else openExternalHttps(url);
     return { action: "deny" };
   });
 
   mainWindow.webContents.on("will-navigate", (event, url) => {
-    if (!url.startsWith(localUrl)) {
+    if (!isTrustedLocalUrl(url, localUrl)) {
       event.preventDefault();
-      shell.openExternal(url).catch(() => {});
+      openExternalHttps(url);
     }
+  });
+
+  mainWindow.webContents.on("will-attach-webview", (event) => event.preventDefault());
+  mainWindow.webContents.session.setPermissionCheckHandler(() => false);
+  mainWindow.webContents.session.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false);
   });
 
   mainWindow.once("ready-to-show", () => {
