@@ -8,13 +8,13 @@
 
 Windows x64：
 
-- `A-shares-one-piece-Setup-1.2.2-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
-- `A-shares-one-piece-Portable-1.2.2-x64.exe`：免安装便携版，直接运行。
+- `A-shares-one-piece-Setup-1.2.3-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
+- `A-shares-one-piece-Portable-1.2.3-x64.exe`：免安装便携版，直接运行。
 
 macOS：
 
-- `A-shares-one-piece-1.2.2-mac-arm64.dmg`：Apple Silicon（M1、M2、M3、M4 等）使用。
-- `A-shares-one-piece-1.2.2-mac-x64.dmg`：Intel 处理器 Mac 使用。
+- `A-shares-one-piece-1.2.3-mac-arm64.dmg`：Apple Silicon（M1、M2、M3、M4 等）使用。
+- `A-shares-one-piece-1.2.3-mac-x64.dmg`：Intel 处理器 Mac 使用。
 
 Mac 用户打开 DMG 后，将“A股短线模型”拖入“应用程序”目录再运行。
 
