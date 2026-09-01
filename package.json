@@ -1,6 +1,6 @@
 {
   "name": "a-share-trading-model",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "license": "MIT",
   "author": "A股短线模型",
@@ -52,7 +52,9 @@
     "dump": "node server.js --dump-data",
     "desktop": "electron .",
     "desktop:dir": "electron-builder --win --x64 --dir",
-    "desktop:dist": "electron-builder --win --x64 --publish never"
+    "desktop:dist": "electron-builder --win --x64 --publish never",
+    "desktop:dist:mac:arm64": "bash release-tools/build-mac-icon.sh && electron-builder --mac dmg --arm64 --publish never",
+    "desktop:dist:mac:x64": "bash release-tools/build-mac-icon.sh && electron-builder --mac dmg --x64 --publish never"
   },
   "dependencies": {
     "ws": "^8.21.3"
@@ -116,8 +118,22 @@
         }
       ]
     },
+    "mac": {
+      "icon": ".cache/mac-icon/app.icns",
+      "category": "public.app-category.finance",
+      "target": [
+        "dmg"
+      ],
+      "artifactName": "A-shares-one-piece-${version}-mac-${arch}.${ext}",
+      "identity": null,
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "artifactName": "A-shares-one-piece-${version}-mac-${arch}.${ext}",
+      "title": "A shares one piece ${version}"
+    },
     "nsis": {
-    "artifactName": "A-shares-one-piece-Setup-${version}-${arch}.${ext}",
+      "artifactName": "A-shares-one-piece-Setup-${version}-${arch}.${ext}",
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
@@ -127,7 +143,7 @@
       "deleteAppDataOnUninstall": false
     },
     "portable": {
-    "artifactName": "A-shares-one-piece-Portable-${version}-${arch}.${ext}"
+      "artifactName": "A-shares-one-piece-Portable-${version}-${arch}.${ext}"
     }
   }
 }

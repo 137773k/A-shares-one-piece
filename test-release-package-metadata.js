@@ -21,8 +21,8 @@ const installerWorkflow = fs.readFileSync(
   "utf8",
 );
 
-test("1.2.0发布元数据、Node边界和安装包名称保持一致", () => {
-  assert.equal(packageJson.version, "1.2.0");
+test("1.2.1发布元数据、Node边界和安装包名称保持一致", () => {
+  assert.equal(packageJson.version, "1.2.1");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   assert.equal(packageJson.engines.node, ">=22.12.0");

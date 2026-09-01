@@ -4,14 +4,23 @@
 
 ## 普通用户怎么使用
 
-正式发布后，Windows x64 用户只需要下载下列其中一个文件：
+普通用户按自己的系统和处理器下载：
 
-- `A-shares-one-piece-Setup-1.2.0-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
-- `A-shares-one-piece-Portable-1.2.0-x64.exe`：免安装便携版，直接运行。
+Windows x64：
+
+- `A-shares-one-piece-Setup-1.2.1-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
+- `A-shares-one-piece-Portable-1.2.1-x64.exe`：免安装便携版，直接运行。
+
+macOS：
+
+- `A-shares-one-piece-1.2.1-mac-arm64.dmg`：Apple Silicon（M1、M2、M3、M4 等）使用。
+- `A-shares-one-piece-1.2.1-mac-x64.dmg`：Intel 处理器 Mac 使用。
+
+Mac 用户打开 DMG 后，将“A股短线模型”拖入“应用程序”目录再运行。
 
 安装包已经包含 Electron、Chromium 和 Node.js。普通用户不需要安装 Git、Node.js、npm、Python、AKShare，也不需要配置云端账号。
 
-下载后请先使用同一 Release 中的 `SHA256SUMS.txt` 核对文件哈希。当前发布包尚未购买数字签名证书，不应把它描述成“已签名可信软件”。
+下载后请先使用同一 Release 中的 SHA-256 清单核对文件哈希。Windows 发布包尚未购买数字签名证书；Mac 发布包未签名且未经过Apple公证，均不应描述成“已签名可信软件”。
 
 ## 第一次启动
 
@@ -23,10 +32,11 @@
 程序默认使用可用端口 `5173-5202`，本地数据保存在：
 
 ```text
-%APPDATA%\a-share-trading-model\runtime
+Windows: %APPDATA%\a-share-trading-model\runtime
+macOS:   ~/Library/Application Support/a-share-trading-model/runtime
 ```
 
-卸载程序默认不会删除该运行数据，便于保留个人复盘记录。不要把这个目录提交到 GitHub 或发送给他人。
+卸载或删除应用默认不会删除该运行数据，便于保留个人复盘记录。不要把这个目录提交到 GitHub 或发送给他人。
 
 ## 数据源与云端边界
 
@@ -41,7 +51,7 @@
 
 - Node.js 22.12.0 或更高版本
 - npm 10 或更高版本
-- Windows x64（当前桌面安装包目标）
+- Windows x64，或 macOS Apple Silicon / Intel
 
 ```powershell
 npm ci
@@ -74,6 +84,8 @@ npm run test:quant-decision
 npm test
 npm run backtest:contract:verify
 npm run desktop:dir
+npm run desktop:dist:mac:arm64
+npm run desktop:dist:mac:x64
 ```
 
 `backtest:preflight` 在缺少正式数据集、决策凭证、成交回执等权威锚时应失败关闭，不能将契约有效误写成正式绩效有效。
@@ -87,6 +99,10 @@ npm run desktop:dir
 ### Windows提示未知发布者
 
 这表示安装包没有受信任的代码签名，不等于文件一定恶意，也不代表可以无条件运行。只应从本项目官方Release下载，并在哈希与 `SHA256SUMS.txt` 完全一致、且你接受未签名风险后再决定是否运行。
+
+### Mac提示无法验证开发者
+
+Mac DMG 未签名且未经过Apple公证，Gatekeeper 可能阻止首次启动。先核对官方 Release 和 SHA-256；确认来源与哈希无误且接受风险后，可在“系统设置 → 隐私与安全”中使用“仍要打开”。受单位管理的 Mac 可能不允许绕过该限制。
 
 ### 数据抓取显示降级
 

@@ -1,0 +1,105 @@
+name: Validate macOS DMG
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "**/*.js"
+      - "**/*.mjs"
+      - "**/*.json"
+      - "**/*.html"
+      - "**/*.css"
+      - "release-tools/**"
+      - "expo-app/assets/icon.png"
+      - "LICENSE"
+      - "README.md"
+      - ".github/workflows/macos-dmg-validation.yml"
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-dmg-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate-dmg:
+    name: validate-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-15
+            build_script: desktop:dist:mac:arm64
+          - arch: x64
+            runner: macos-15-intel
+            build_script: desktop:dist:mac:x64
+    env:
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22.12.0"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify dependencies and source boundaries
+        run: |
+          npm audit
+          bash -n release-tools/build-mac-icon.sh
+          bash -n release-tools/Test-MacDmg.sh
+          node --test test-macos-release-metadata.js test-desktop-security.js test-open-source-hygiene.js
+          npm run backtest:contract:verify
+          npm run test:quant-decision
+          npm test
+
+      - name: Build macOS DMG
+        run: npm run ${{ matrix.build_script }}
+
+      - name: Mount, launch twice and detach DMG
+        run: bash release-tools/Test-MacDmg.sh "${{ matrix.arch }}" ./release ./release-validation-output
+
+      - name: Generate macOS release manifest
+        run: node release-tools/build-mac-release-manifest.mjs ./release "${{ matrix.arch }}"
+
+      - name: Upload macOS validation evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-validation-${{ github.sha }}-${{ matrix.arch }}
+          if-no-files-found: warn
+          retention-days: 7
+          path: |
+            release-validation-output/macos-*-${{ matrix.arch }}.*
+            release/release-manifest-macos-${{ matrix.arch }}.json
+            release/SHA256SUMS-macos-${{ matrix.arch }}.txt
+
+      - name: Upload validated macOS package
+        if: success() && startsWith(github.ref, 'refs/tags/v')
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: macos-release-${{ github.ref_name }}-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+          path: |
+            release/A-shares-one-piece-*-mac-${{ matrix.arch }}.dmg
+            release/release-manifest-macos-${{ matrix.arch }}.json
+            release/SHA256SUMS-macos-${{ matrix.arch }}.txt
