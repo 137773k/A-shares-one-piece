@@ -26,19 +26,20 @@ function rehash(contract) {
 }
 
 const FAST_VALIDATION = Object.freeze({ verifySourceFiles: false, verifyGit: false });
+const LEGACY_REGISTRY_PATH = path.join(__dirname, "backtest", "contracts", "registry.json");
 const V6_CONTRACT_PATH = path.join(__dirname, "backtest", "contracts", "strategy-v6.json");
-const V7_CONTRACT_PATH = path.join(__dirname, "backtest", "contracts", "strategy-v7.json");
+const V8_CONTRACT_PATH = path.join(__dirname, "backtest", "contracts", "strategy-v8.json");
 
 function loadV6Contract() {
   return loadBacktestContract(V6_CONTRACT_PATH);
 }
 
-function loadV7Contract() {
-  return loadBacktestContract(V7_CONTRACT_PATH);
+function loadV8Contract() {
+  return loadBacktestContract(V8_CONTRACT_PATH);
 }
 
-test("strategy-v7正式登记契约、Git基线、源码和运行版本全部一致", () => {
-  const contract = loadV7Contract();
+test("strategy-v8公开仓库契约、Git基线、源码和运行版本全部一致", () => {
+  const contract = loadV8Contract();
   const inspection = validateBacktestContract(contract);
   const pendingRegistryCommit = inspection.reasons.includes("working_registry_differs_from_head");
   assert.deepEqual(
@@ -47,19 +48,19 @@ test("strategy-v7正式登记契约、Git基线、源码和运行版本全部一
     inspection.reasons.join(";"),
   );
   assert.equal(inspection.valid, !pendingRegistryCommit);
-  assert.equal(loadBacktestContract().contractVersion, "v7");
+  assert.equal(loadBacktestContract().contractVersion, "v8");
   assert.equal(inspection.contractHash, contract.integrity.contractHash);
   assert.equal(inspection.strategyHash, contract.strategyBaseline.strategyHash);
-  assert.equal(contract.strategyBaseline.sourceCommit, "da6d5e9ecfada9f253323ba4f4436e0bbfa44d5a");
-  assert.equal(contract.strategyBaseline.sourceTree.fileCount, 78);
+  assert.equal(contract.strategyBaseline.sourceCommit, "8e77f92fcbb0ea0ceae332979d863d50e108ae0b");
+  assert.equal(contract.strategyBaseline.sourceTree.fileCount, 81);
   assert.equal(inspection.fileAudit.length, 35);
   assert(inspection.fileAudit.every((row) => row.currentMatches && row.commitMatches));
   assert.equal(inspection.registryAudit.valid, !pendingRegistryCommit);
   if (pendingRegistryCommit) {
     assert.deepEqual(inspection.registryAudit.reasons, ["working_registry_differs_from_head"]);
   }
-  assert.equal(inspection.registryAudit.entry.contractVersion, "v7");
-  assert.equal(inspection.registryAudit.entry.contractCommit, "328b11be252b276880ad2270094ccaeb3ecddb6f");
+  assert.equal(inspection.registryAudit.entry.contractVersion, "v8");
+  assert.equal(inspection.registryAudit.entry.contractCommit, "c6833604239c5568cd045d159851dd4d2c253e08");
   assert.equal(contract.signals.asDecided.allowObservationCandidates, false);
   assert.equal(contract.signals.asDecided.allowLegacySelected, false);
   assert.equal(contract.signals.counterfactual.receiptAllowed, false);
@@ -84,7 +85,7 @@ test("strategy-v7正式登记契约、Git基线、源码和运行版本全部一
 });
 
 test("V1至V6契约文件与既有registry哈希保持不变", () => {
-  const registry = loadBacktestContractRegistry();
+  const registry = loadBacktestContractRegistry(LEGACY_REGISTRY_PATH);
   for (const entry of registry.entries.filter((row) => /^v[1-6]$/.test(row.contractVersion))) {
     const historical = loadBacktestContract(path.join(__dirname, entry.contractPath));
     assert.equal(computeBacktestContractHash(historical), entry.contractHash, entry.contractVersion);
@@ -157,7 +158,7 @@ test("V7重算哈希也不能放宽一分钟、分层卖出、上下文和成交
     }, "v7_strategy_source_missing:fetch_jqdata_minute_outcomes.py"],
   ];
   for (const [label, mutate, expectedReason] of cases) {
-    const contract = copy(loadV7Contract());
+    const contract = copy(loadV8Contract());
     mutate(contract);
     rehash(contract);
     assert(
@@ -211,25 +212,25 @@ test("重算哈希后仍不能删除坏样本、关闭防护或清零成本", ()
   }
 });
 
-test("源码、因子登记表或运行版本漂移时旧契约立即失效", () => {
-  const source = copy(loadV6Contract());
+test("源码、因子登记表或运行版本漂移时当前契约立即失效", () => {
+  const source = copy(loadV8Contract());
   source.strategyBaseline.sourceFiles[0].sha256 = "f".repeat(64);
   rehash(source);
   const sourceInspection = validateBacktestContract(source);
   assert(sourceInspection.reasons.some((reason) => reason.startsWith("strategy_source_worktree_mismatch:")));
   assert(sourceInspection.reasons.some((reason) => reason.startsWith("strategy_source_commit_mismatch:")));
 
-  const version = copy(loadV6Contract());
+  const version = copy(loadV8Contract());
   version.strategyBaseline.versions.unifiedQuantFactors = 999;
   rehash(version);
   assert(validateBacktestContract(version, FAST_VALIDATION).reasons.includes("unified_factor_version_mismatch"));
 
-  const registry = copy(loadV6Contract());
+  const registry = copy(loadV8Contract());
   registry.strategyBaseline.factorRegistryHash = "a".repeat(64);
   rehash(registry);
   assert(validateBacktestContract(registry, FAST_VALIDATION).reasons.includes("factor_registry_hash_mismatch"));
 
-  const tree = copy(loadV6Contract());
+  const tree = copy(loadV8Contract());
   tree.strategyBaseline.sourceTree.hash = "b".repeat(64);
   rehash(tree);
   assert(validateBacktestContract(tree).reasons.includes("strategy_source_tree_hash_mismatch"));
@@ -286,7 +287,7 @@ test("runId纯函数绑定策略、引擎、数据、轨道和显式配置", () 
     runConfig: identity.runConfig,
   };
   assert.throws(() => createBacktestRunManifest(contract, { ...input, lane: "combined" }), /lane/);
-  assert.throws(() => createBacktestRunManifest(loadV7Contract(), {
+  assert.throws(() => createBacktestRunManifest(loadV8Contract(), {
     ...input,
     sellVariant: "FULL_1M_TICK",
   }), /signed Tick ingestion/);
@@ -301,8 +302,8 @@ test("runId纯函数绑定策略、引擎、数据、轨道和显式配置", () 
   );
 });
 
-test("V7缺少数据、凭证、引擎、持仓执行器和成交回执锚时正式绩效失败关闭", () => {
-  const contract = loadV7Contract();
+test("V8缺少数据、凭证、引擎、持仓执行器和成交回执锚时正式绩效失败关闭", () => {
+  const contract = loadV8Contract();
   const readiness = inspectBacktestExecutionReadiness(contract);
   assert.equal(readiness.executable, false);
   assert.equal(readiness.formalPerformanceEligible, false);
@@ -316,7 +317,7 @@ test("V7缺少数据、凭证、引擎、持仓执行器和成交回执锚时正
 });
 
 test("外部锚定哈希不一致时拒绝契约", () => {
-  const contract = loadV7Contract();
+  const contract = loadV8Contract();
   const inspection = validateBacktestContract(contract, {
     ...FAST_VALIDATION,
     expectedContractHash: "f".repeat(64),
@@ -325,7 +326,7 @@ test("外部锚定哈希不一致时拒绝契约", () => {
 });
 
 test("重算契约内哈希仍不能绕过独立Git注册表", () => {
-  const contract = copy(loadV7Contract());
+  const contract = copy(loadV8Contract());
   contract.name = "篡改后的同版本契约";
   rehash(contract);
   const inspection = validateBacktestContract(contract);
@@ -333,18 +334,18 @@ test("重算契约内哈希仍不能绕过独立Git注册表", () => {
   assert(inspection.reasons.includes("working_contract_differs_from_registered_blob"));
 
   const registry = copy(loadBacktestContractRegistry());
-  const v7Entry = registry.entries.find((entry) => entry.contractVersion === "v7");
-  v7Entry.contractHash = "f".repeat(64);
-  const registryInspection = validateBacktestContractRegistry(registry, loadV7Contract());
+  const v8Entry = registry.entries.find((entry) => entry.contractVersion === "v8");
+  v8Entry.contractHash = "f".repeat(64);
+  const registryInspection = validateBacktestContractRegistry(registry, loadV8Contract());
   assert.equal(registryInspection.valid, false);
   assert(registryInspection.reasons.includes("contract_registry_hash_mismatch"));
 });
 
 test("每个契约版本必须锚定其文件首次加入Git的提交", () => {
   const registry = copy(loadBacktestContractRegistry());
-  const v2Entry = registry.entries.find((entry) => entry.contractVersion === "v2");
-  v2Entry.contractCommit = "f".repeat(40);
-  const inspection = validateBacktestContractRegistry(registry, loadV7Contract());
+  const v8Entry = registry.entries.find((entry) => entry.contractVersion === "v8");
+  v8Entry.contractCommit = "f".repeat(40);
+  const inspection = validateBacktestContractRegistry(registry, loadV8Contract());
   assert.equal(inspection.valid, false);
-  assert(inspection.reasons.includes("contract_registry_commit_not_file_creation_commit:v2"));
+  assert(inspection.reasons.includes("contract_registry_commit_not_file_creation_commit:v8"));
 });

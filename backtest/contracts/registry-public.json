@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "authority": "a_share_backtest_contract_registry_v1",
+  "appendOnly": true,
+  "entries": [
+    {
+      "contractVersion": "v8",
+      "contractPath": "backtest/contracts/strategy-v8.json",
+      "contractCommit": "c6833604239c5568cd045d159851dd4d2c253e08",
+      "contractHash": "275255add453254a2808a11ba9bc661d49c81f0217ea6e1528009c56d264c6e8",
+      "strategyHash": "4b11ccacf4a2ef0a181524de4b0c14a6ccebf1d34ec7d819c273876a3ee7de71",
+      "sourceCommit": "8e77f92fcbb0ea0ceae332979d863d50e108ae0b",
+      "status": "approved"
+    }
+  ],
+  "rule": "公开仓库从v8建立独立append-only注册表；v1-v7保留为私有历史参考，不在公开Git历史中声明可验证"
+}

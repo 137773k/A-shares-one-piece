@@ -44,8 +44,8 @@ const {
 
 const BACKTEST_CONTRACT_SCHEMA_VERSION = 1;
 const BACKTEST_CONTRACT_AUTHORITY = "a_share_backtest_contract_v1";
-const DEFAULT_CONTRACT_PATH = path.join(__dirname, "contracts", "strategy-v7.json");
-const DEFAULT_REGISTRY_PATH = path.join(__dirname, "contracts", "registry.json");
+const DEFAULT_CONTRACT_PATH = path.join(__dirname, "contracts", "strategy-v8.json");
+const DEFAULT_REGISTRY_PATH = path.join(__dirname, "contracts", "registry-public.json");
 const BACKTEST_CONTRACT_REGISTRY_AUTHORITY = "a_share_backtest_contract_registry_v1";
 const DEFAULT_ENGINE_MANIFEST_PATH = path.join(__dirname, "engine-manifest.json");
 const DEFAULT_DATASET_MANIFEST_PATH = path.join(__dirname, "dataset-manifest.json");
@@ -220,7 +220,9 @@ function untrackedProductionSources(root) {
 
 function validateBacktestContractRegistry(registry, contract, options = {}) {
   const root = path.resolve(options.root || path.join(__dirname, ".."));
-  const registryPath = "backtest/contracts/registry.json";
+  const registryPath = safeRelativePath(
+    options.registryPath || path.relative(root, DEFAULT_REGISTRY_PATH).replace(/\\/g, "/"),
+  );
   const source = isObject(registry) ? registry : {};
   const entries = Array.isArray(source.entries) ? source.entries : [];
   const reasons = [];
@@ -360,8 +362,8 @@ function validateBacktestContract(contract, options = {}) {
   const isV4 = contractVersion === "v4";
   const isV5 = contractVersion === "v5";
   const isV6 = contractVersion === "v6";
-  const isV7 = contractVersion === "v7";
-  const isV6Plus = isV6 || isV7;
+  const isMinuteSell = ["v7", "v8"].includes(contractVersion);
+  const isV6Plus = isV6 || isMinuteSell;
   const isV5Plus = isV5 || isV6Plus;
   const isV4Plus = isV4 || isV5Plus;
   const isV3Plus = isV3 || isV4Plus;
@@ -416,7 +418,7 @@ function validateBacktestContract(contract, options = {}) {
     "priceAndAccounting", "positionAccounting", "costs", "lanes", "outcomes", "metrics",
     "metricDefinitions", "metricZeroDenominatorPolicy", "metricGroupingPolicy",
     "dataPolicy", "enginePolicy", "validationThresholds", "guardrails", "integrity",
-    ...(isV7 ? ["minuteEvidence", "sellVariants"] : []),
+    ...(isMinuteSell ? ["minuteEvidence", "sellVariants"] : []),
   ], "contract"));
   reasons.push(...unknownKeyReasons(baseline, [
     "baselineId", "sourceCommit", "strategyHash", "versions", "factorRegistryHash", "sourceFiles",
@@ -424,14 +426,14 @@ function validateBacktestContract(contract, options = {}) {
   ], "strategy_baseline"));
   reasons.push(...unknownKeyReasons(versions, [
     "decisionChain", "unifiedQuantFactors", "stockFactorAuthority", "stockFactorEngine",
-    ...(isV7 ? [
+    ...(isMinuteSell ? [
       "minuteEvidenceAuthority", "minuteEvidenceVersion",
       "sellDecisionEntryAuthority", "sellDecisionEntryVersion",
       "sellStrategyAuthority", "sellStrategyVersion", "sellStrategyMethod",
     ] : []),
   ], "strategy_versions"));
   reasons.push(...unknownKeyReasons(sourceTree, ["policy", "fileCount", "hash"], "strategy_source_tree"));
-  if (isV7) {
+  if (isMinuteSell) {
     reasons.push(...unknownKeyReasons(minuteEvidence, [
       "authority", "version", "barIntervalMinutes", "fullSessionBarCount", "priceMode",
       "acceptedSourceTimestampConventions", "barStartObservationPolicy",
@@ -531,7 +533,7 @@ function validateBacktestContract(contract, options = {}) {
       "allowObservationCandidates", "allowLegacySelected", "allowForcedCandidate",
     ], "signal"));
   }
-  reasons.push(...unknownKeyReasons(entry, isV7 ? [
+  reasons.push(...unknownKeyReasons(entry, isMinuteSell ? [
     "session", "rulePathByLane", "triggerWindowSource", "maxGapSource", "fillMethod", "fillPriceFormula",
     "fillProcessingOrder", "slippageBps", "barIntervalMinutes", "triggerBarFillPolicy",
     "minuteEvidenceAuthority", "referencePriceAdjustmentPolicy", "fillBarPositiveAmountAndVolumeRequired",
@@ -571,7 +573,7 @@ function validateBacktestContract(contract, options = {}) {
     ["asDecided", "counterfactual"],
     "portfolio_exposure_paths",
   ));
-  reasons.push(...unknownKeyReasons(exit, isV7 ? [
+  reasons.push(...unknownKeyReasons(exit, isMinuteSell ? [
     "earliestSession", "method", "markToMarketAtEntryDayClose", "sellabilityEvidence",
     "securityLimitPolicy", "lowerLimitIntentPolicy", "slippageBoundaryPolicy",
     "maximumFillBarParticipationPct", "participationCapBreachPolicy", "maximumOrderQuantityPolicy",
@@ -596,7 +598,7 @@ function validateBacktestContract(contract, options = {}) {
     "earliestSession", "method", "maximumHoldingSessions", "markToMarketAtEntryDayClose",
     "limitDownLockedPolicy", "unresolvedAtMaxHoldingPolicy",
   ], "exit"));
-  if (isV7) {
+  if (isMinuteSell) {
     reasons.push(...unknownKeyReasons(exitStateMachine, [
       "authority", "version", "method", "upperLayer", "lowerLayer", "sameBarPriority",
     ], "exit_state_machine"));
@@ -668,7 +670,7 @@ function validateBacktestContract(contract, options = {}) {
       "corporateActionLedgerRequired", "entryAndExitEvidenceRequired", "asDecidedRequiredFields",
       "counterfactualRequiredFields", "legacyT1OutcomeUse", "priceAdjustmentMode",
       "corporateActionLedgerSchema",
-      ...(isV7 ? [
+      ...(isMinuteSell ? [
         "minuteEvidenceManifestRequired", "sellVariantBoundInDataset",
         "decisionReceiptAnchorRequired", "signedContextAnchorsRequired",
         "signedContextAuthorities", "sameContextIdentityRequiredFields",
@@ -685,7 +687,7 @@ function validateBacktestContract(contract, options = {}) {
   if (isV2 || isV3Plus) reasons.push(...unknownKeyReasons(enginePolicy, [
     "engineManifestRequired", "engineCommitRequired", "engineTreeHashRequired",
     "runtimeNodeVersionRequired", "backtestDirectoryMustBeAnchored",
-    ...(isV7 ? ["positionEngineRequired", "fillReceiptValidatorRequired", "formalPerformanceEligibility"] : []),
+    ...(isMinuteSell ? ["positionEngineRequired", "fillReceiptValidatorRequired", "formalPerformanceEligibility"] : []),
   ], "engine_policy"));
   reasons.push(...unknownKeyReasons(lanes, ["asDecided", "counterfactual", "combineMetrics"], "lanes"));
   reasons.push(...unknownKeyReasons(asDecided, ["asDecided", "receiptRequired", "executionAuthority"], "lane_as_decided"));
@@ -706,7 +708,7 @@ function validateBacktestContract(contract, options = {}) {
     reasons.push(...unknownKeyReasons(metricGroupingPolicy, [
       "labelSource", "tradeLevelMetrics", "portfolioLevelMetrics",
       "portfolioMetricGrouping", "successorGrouping",
-      ...(isV7 ? ["sellVariantGrouping"] : []),
+      ...(isMinuteSell ? ["sellVariantGrouping"] : []),
     ], "metric_grouping_policy"));
   }
   reasons.push(...unknownKeyReasons(source.validationThresholds, [
@@ -719,7 +721,7 @@ function validateBacktestContract(contract, options = {}) {
     "entryDayCloseIsMarkToMarketOnly", "legacyT1OutcomeCannotSettlePosition",
     "unrealizedCannotEnterRealizedReturn", "capitalRemainsOccupiedWhileCarried",
     "incompleteRunCannotClaimPerformance",
-    ...(isV7 ? [
+    ...(isMinuteSell ? [
       "triggerBarCannotFillItself", "barStartObservedAtEnd", "sellIntentCannotMutatePosition",
       "fillReceiptRequiredForPositionMutation", "minuteVolumeCannotProxySealTick",
       "sellVariantsCannotCombineMetrics", "t1IntentCannotFillBeforeTPlus2",
@@ -732,7 +734,7 @@ function validateBacktestContract(contract, options = {}) {
   if (String(source.authority || "") !== BACKTEST_CONTRACT_AUTHORITY) reasons.push("contract_authority_invalid");
   if (String(source.status || "") !== "frozen") reasons.push("contract_not_frozen");
   if (!/^v\d+$/.test(String(source.contractVersion || ""))) reasons.push("contract_version_invalid");
-  if (!["v1", "v2", "v3", "v4", "v5", "v6", "v7"].includes(contractVersion)) reasons.push("contract_version_unsupported");
+  if (!["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"].includes(contractVersion)) reasons.push("contract_version_unsupported");
   if (!/^[a-f0-9]{40}$/.test(sourceCommit)) reasons.push("strategy_source_commit_invalid");
   if (!String(baseline.baselineId || "").trim()) reasons.push("strategy_baseline_id_missing");
   if (!/^[a-f0-9]{64}$/.test(String(baseline.strategyHash || ""))) reasons.push("strategy_hash_missing_or_invalid");
@@ -747,7 +749,7 @@ function validateBacktestContract(contract, options = {}) {
   if (Number(versions.unifiedQuantFactors) !== UNIFIED_QUANT_FACTORS_VERSION) reasons.push("unified_factor_version_mismatch");
   if (String(versions.stockFactorAuthority || "") !== STOCK_FACTOR_AUTHORITY) reasons.push("stock_factor_authority_mismatch");
   if (Number(versions.stockFactorEngine) !== STOCK_FACTOR_VERSION) reasons.push("stock_factor_version_mismatch");
-  if (isV7) {
+  if (isMinuteSell) {
     if (versions.minuteEvidenceAuthority !== MINUTE_EVIDENCE_AUTHORITY) {
       reasons.push("minute_evidence_authority_mismatch");
     }
@@ -820,7 +822,7 @@ function validateBacktestContract(contract, options = {}) {
     }
     fileAudit.push(audit);
   }
-  if (isV7) {
+  if (isMinuteSell) {
     for (const requiredPath of [
       "quant-decision/minute-evidence.js", "quant-decision/v7-sell-decision.js", "sell-engine.js",
       "fetch_jqdata_minute_outcomes.py", "fetch_akshare_1m_outcomes.py",
@@ -851,7 +853,9 @@ function validateBacktestContract(contract, options = {}) {
   if (verifyRegistry) {
     try {
       const registry = loadBacktestContractRegistry(options.registryPath || DEFAULT_REGISTRY_PATH);
-      registryAudit = validateBacktestContractRegistry(registry, source, { root });
+      const registryPath = path.relative(root, path.resolve(options.registryPath || DEFAULT_REGISTRY_PATH))
+        .replace(/\\/g, "/");
+      registryAudit = validateBacktestContractRegistry(registry, source, { root, registryPath });
       reasons.push(...registryAudit.reasons);
     } catch (_error) {
       reasons.push("contract_registry_unavailable");
@@ -859,7 +863,7 @@ function validateBacktestContract(contract, options = {}) {
     }
   }
 
-  if (isV7) {
+  if (isMinuteSell) {
     if (minuteEvidence.authority !== MINUTE_EVIDENCE_AUTHORITY
       || Number(minuteEvidence.version) !== MINUTE_EVIDENCE_VERSION) {
       reasons.push("minute_evidence_contract_identity_invalid");
@@ -1022,10 +1026,10 @@ function validateBacktestContract(contract, options = {}) {
   }
   if (entry.triggerWindowSource !== "FROZEN_PER_STOCK_RULE") reasons.push("entry_trigger_window_source_invalid");
   if (entry.maxGapSource !== "executionReplayRule.maxGapPct") reasons.push("entry_max_gap_source_invalid");
-  const expectedEntryFillMethod = isV7 ? "NEXT_1M_BAR_OPEN" : "NEXT_5M_BAR_OPEN";
+  const expectedEntryFillMethod = isMinuteSell ? "NEXT_1M_BAR_OPEN" : "NEXT_5M_BAR_OPEN";
   if (entry.fillMethod !== expectedEntryFillMethod) reasons.push("entry_fill_method_invalid");
   if (isV4Plus) {
-    const expectedEntryFillFormula = isV7
+    const expectedEntryFillFormula = isMinuteSell
       ? "ROUND_UP_NEXT_1M_OPEN_TIMES_ONE_PLUS_ENTRY_SLIPPAGE_TO_PROVIDER_TICK_THEN_RECHECK_LIMITS"
       : "ROUND_UP_NEXT_5M_OPEN_TIMES_ONE_PLUS_ENTRY_SLIPPAGE_TO_PROVIDER_TICK_THEN_RECHECK_LIMITS";
     if (entry.fillPriceFormula !== expectedEntryFillFormula) {
@@ -1036,7 +1040,7 @@ function validateBacktestContract(contract, options = {}) {
       reasons.push("entry_fill_processing_order_invalid");
     }
   }
-  if (isV7) {
+  if (isMinuteSell) {
     if (Number(entry.barIntervalMinutes) !== 1) reasons.push("entry_bar_interval_invalid");
     if (entry.triggerBarFillPolicy
       !== "TRIGGER_BAR_NEVER_FILLS_USE_IMMEDIATE_NEXT_CANONICAL_1M_BAR_ONLY") {
@@ -1202,7 +1206,7 @@ function validateBacktestContract(contract, options = {}) {
   }
 
   if (exit.earliestSession !== "T_PLUS_2") reasons.push("exit_earliest_session_invalid");
-  if (isV7) {
+  if (isMinuteSell) {
     if (exit.method !== "LAYERED_V7_SELL_INTENT_STATE_MACHINE_FROM_T_PLUS_2") {
       reasons.push("exit_method_invalid");
     }
@@ -1504,7 +1508,7 @@ function validateBacktestContract(contract, options = {}) {
     if (corporateActions.missingActionEvidencePolicy !== "RUN_INCOMPLETE_NO_PERFORMANCE_CLAIM") {
       reasons.push("corporate_action_missing_evidence_policy_invalid");
     }
-    const expectedDailyOrder = isV7
+    const expectedDailyOrder = isMinuteSell
       ? "CORPORATE_ACTIONS_THEN_INTRADAY_ENTRIES_THEN_INTRADAY_EXIT_INTENTS_THEN_VALIDATED_FILLS_COSTS_AND_PROCEEDS_THEN_MARK_TO_MARKET_THEN_SIGNAL"
       : "CORPORATE_ACTIONS_THEN_INTRADAY_ENTRIES_THEN_CLOSE_EXITS_THEN_COSTS_AND_PROCEEDS_THEN_MARK_TO_MARKET_THEN_SIGNAL";
     if (eventOrdering.dailyOrder !== expectedDailyOrder) {
@@ -1592,7 +1596,7 @@ function validateBacktestContract(contract, options = {}) {
     if (dataPolicy.legacyT1OutcomeUse !== "EVALUATION_ONLY_NOT_REALIZED_PNL") {
       reasons.push("legacy_t1_outcome_can_supply_realized_pnl");
     }
-    if (isV7) {
+    if (isMinuteSell) {
       if (dataPolicy.minuteEvidenceManifestRequired !== true
         || dataPolicy.sellVariantBoundInDataset !== true) {
         reasons.push("dataset_v7_minute_variant_binding_missing");
@@ -1641,7 +1645,7 @@ function validateBacktestContract(contract, options = {}) {
     if (enginePolicy.engineTreeHashRequired !== true) reasons.push("engine_tree_hash_not_required");
     if (enginePolicy.runtimeNodeVersionRequired !== true) reasons.push("engine_node_version_not_required");
     if (enginePolicy.backtestDirectoryMustBeAnchored !== true) reasons.push("backtest_engine_tree_not_anchored");
-    if (isV7) {
+    if (isMinuteSell) {
       if (enginePolicy.positionEngineRequired !== true) reasons.push("position_engine_not_required");
       if (enginePolicy.fillReceiptValidatorRequired !== true) reasons.push("fill_receipt_validator_not_required");
       if (enginePolicy.formalPerformanceEligibility
@@ -1672,7 +1676,7 @@ function validateBacktestContract(contract, options = {}) {
       "corporate_action_unresolved",
     ]) requiredOutcomes.add(status);
   }
-  if (isV7) {
+  if (isMinuteSell) {
     for (const status of [
       "t1_locked_exit_pending", "exit_intent_pending", "partial_exit_filled", "sell_variant_unavailable",
     ]) requiredOutcomes.add(status);
@@ -1702,7 +1706,7 @@ function validateBacktestContract(contract, options = {}) {
     }
   }
   const requiredGroups = new Set(["bigCycle", "smallCycle", "theme", "stockMode", "marketCapBucket"]);
-  if (isV7) requiredGroups.add("sellVariant");
+  if (isMinuteSell) requiredGroups.add("sellVariant");
   const groups = new Set(Array.isArray(source.metrics && source.metrics.groupBy) ? source.metrics.groupBy : []);
   for (const group of requiredGroups) {
     if (!groups.has(group)) reasons.push(`required_metric_group_missing:${group}`);
@@ -1788,7 +1792,7 @@ function validateBacktestContract(contract, options = {}) {
         portfolioMetricGrouping: "OVERALL_ONLY_NO_SIMPLE_GROUP_ATTRIBUTION",
         successorGrouping: "INHERIT_ORIGINAL_LINEAGE_OPENING_SIGNAL_LABELS",
       };
-      if (isV7) {
+      if (isMinuteSell) {
         expectedGroupingPolicy.sellVariantGrouping
           = "CORE_1M_AND_FULL_1M_TICK_SEPARATE_NO_MERGE";
       }
@@ -1824,7 +1828,7 @@ function validateBacktestContract(contract, options = {}) {
   if (isV3Plus && guardrails.incompleteRunCannotClaimPerformance !== true) {
     reasons.push("incomplete_run_performance_guard_missing");
   }
-  if (isV7) {
+  if (isMinuteSell) {
     if (guardrails.triggerBarCannotFillItself !== true) reasons.push("trigger_bar_fill_guard_missing");
     if (guardrails.barStartObservedAtEnd !== true) reasons.push("bar_start_observation_guard_missing");
     if (guardrails.sellIntentCannotMutatePosition !== true) reasons.push("sell_intent_mutation_guard_missing");
@@ -1849,7 +1853,7 @@ function validateBacktestContract(contract, options = {}) {
       stockFactorAuthority: STOCK_FACTOR_AUTHORITY,
       stockFactorEngine: STOCK_FACTOR_VERSION,
       factorRegistryHash: runtimeFactorRegistryHash,
-      ...(isV7 ? {
+      ...(isMinuteSell ? {
         minuteEvidenceAuthority: MINUTE_EVIDENCE_AUTHORITY,
         minuteEvidenceVersion: MINUTE_EVIDENCE_VERSION,
         sellDecisionEntryAuthority: V7_SELL_DECISION_ENTRY_AUTHORITY,
@@ -1934,8 +1938,10 @@ function inspectBacktestExecutionReadiness(contract, input = {}, options = {}) {
   );
   const positionEnginePath = path.join(root, "backtest", "position-engine.js");
 
-  if (String(source.contractVersion || "") !== "v7") reasons.push("contract_version_not_execution_target");
-  if (String(source.contractVersion || "") === "v7"
+  if (!["v7", "v8"].includes(String(source.contractVersion || ""))) {
+    reasons.push("contract_version_not_execution_target");
+  }
+  if (["v7", "v8"].includes(String(source.contractVersion || ""))
     && input.sellVariant === "FULL_1M_TICK"
     && source.sellVariants && source.sellVariants.FULL_1M_TICK
     && source.sellVariants.FULL_1M_TICK.productionInputAvailable !== true) {
@@ -1986,11 +1992,11 @@ function createBacktestRunManifest(contract, input = {}) {
     throw new Error("lane must be asDecided or counterfactual");
   }
   const sellVariant = String(input.sellVariant || "");
-  if (String(contract.contractVersion || "") === "v7"
+  if (["v7", "v8"].includes(String(contract.contractVersion || ""))
     && !["CORE_1M", "FULL_1M_TICK"].includes(sellVariant)) {
     throw new Error("sellVariant must be CORE_1M or FULL_1M_TICK");
   }
-  if (String(contract.contractVersion || "") === "v7"
+  if (["v7", "v8"].includes(String(contract.contractVersion || ""))
     && sellVariant === "FULL_1M_TICK"
     && contract.sellVariants && contract.sellVariants.FULL_1M_TICK
     && contract.sellVariants.FULL_1M_TICK.productionInputAvailable !== true) {
@@ -2025,7 +2031,7 @@ function createBacktestRunManifest(contract, input = {}) {
     fillReceiptAnchorHash: readiness.fillReceiptAnchorHash,
     runtimeNodeVersion: readiness.runtimeNodeVersion,
     lane,
-    ...(String(contract.contractVersion || "") === "v7" ? { sellVariant } : {}),
+    ...(["v7", "v8"].includes(String(contract.contractVersion || "")) ? { sellVariant } : {}),
     runConfig,
   };
   return {

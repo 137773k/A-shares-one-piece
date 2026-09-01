@@ -6,7 +6,9 @@
 
 ## 当前阶段
 
-`strategy-v7` 已冻结到源码提交 `da6d5e9ecfada9f253323ba4f4436e0bbfa44d5a`，契约首次加入Git的提交为 `328b11be252b276880ad2270094ccaeb3ecddb6f`，并已按append-only规则登记为当前默认契约。`strategy-v1`至`strategy-v6`继续保持字节、首次提交和登记哈希不变。
+公开仓库默认使用 `strategy-v8`：策略源码冻结到提交 `8e77f92fcbb0ea0ceae332979d863d50e108ae0b`，契约首次加入Git的提交为 `c6833604239c5568cd045d159851dd4d2c253e08`，并登记在独立的 `registry-public.json`。`strategy-v1`至`strategy-v7`保留为私有历史参考快照，其原始提交锚不进入公开仓库，也不参与公开默认契约授权。
+
+V8不放宽V7规则，只把当前公开源码、因子目录和完整源码树重新冻结到可公开验证的Git基线。以后规则变化仍必须新增契约版本，禁止覆盖V8。
 
 V7保留V6的决策凭证、组合、公司行动、成本和血缘会计边界，但把入场与卖出证据收紧为：
 
@@ -58,7 +60,7 @@ npm run backtest:preflight
 npm run test:backtest-contract
 ```
 
-`backtest:contract:verify`校验冻结契约、源码提交和registry；`backtest:preflight`校验能否正式执行。当前后者应以退出码2失败，并明确列出缺少的数据集、决策凭证、引擎、持仓执行器和成交回执锚，这属于预期门禁，不是测试异常。
+`backtest:contract:verify`校验V8冻结契约、公开源码提交和 `registry-public.json`；`backtest:preflight`校验能否正式执行。当前后者应以退出码2失败，并明确列出缺少的数据集、决策凭证、引擎、持仓执行器和成交回执锚，这属于预期门禁，不是测试异常。
 
 策略源码、参数或因子登记表发生变化后，现有契约应立即校验失败；必须创建新契约版本，禁止覆盖旧版本。
 
