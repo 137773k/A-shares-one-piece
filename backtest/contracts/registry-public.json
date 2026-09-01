@@ -11,6 +11,15 @@
       "strategyHash": "4b11ccacf4a2ef0a181524de4b0c14a6ccebf1d34ec7d819c273876a3ee7de71",
       "sourceCommit": "8e77f92fcbb0ea0ceae332979d863d50e108ae0b",
       "status": "approved"
+    },
+    {
+      "contractVersion": "v9",
+      "contractPath": "backtest/contracts/strategy-v9.json",
+      "contractCommit": "cec58e435d2a0ad545a4ecad05322727479df2e8",
+      "contractHash": "d7b1d7ed8c22829a81e08880a60655470e658d57544208278456b2d1a344911e",
+      "strategyHash": "7b79b508895809b2b070e8fc70b24c4b403d368eb25378458a97d9aa9b18e36f",
+      "sourceCommit": "f80207cc4ccf0a009a1eb0df29e369575f750488",
+      "status": "approved"
     }
   ],
   "rule": "公开仓库从v8建立独立append-only注册表；v1-v7保留为私有历史参考，不在公开Git历史中声明可验证"

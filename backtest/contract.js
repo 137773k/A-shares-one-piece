@@ -44,7 +44,7 @@ const {
 
 const BACKTEST_CONTRACT_SCHEMA_VERSION = 1;
 const BACKTEST_CONTRACT_AUTHORITY = "a_share_backtest_contract_v1";
-const DEFAULT_CONTRACT_PATH = path.join(__dirname, "contracts", "strategy-v8.json");
+const DEFAULT_CONTRACT_PATH = path.join(__dirname, "contracts", "strategy-v9.json");
 const DEFAULT_REGISTRY_PATH = path.join(__dirname, "contracts", "registry-public.json");
 const BACKTEST_CONTRACT_REGISTRY_AUTHORITY = "a_share_backtest_contract_registry_v1";
 const DEFAULT_ENGINE_MANIFEST_PATH = path.join(__dirname, "engine-manifest.json");
@@ -362,7 +362,7 @@ function validateBacktestContract(contract, options = {}) {
   const isV4 = contractVersion === "v4";
   const isV5 = contractVersion === "v5";
   const isV6 = contractVersion === "v6";
-  const isMinuteSell = ["v7", "v8"].includes(contractVersion);
+  const isMinuteSell = ["v7", "v8", "v9"].includes(contractVersion);
   const isV6Plus = isV6 || isMinuteSell;
   const isV5Plus = isV5 || isV6Plus;
   const isV4Plus = isV4 || isV5Plus;
@@ -734,7 +734,7 @@ function validateBacktestContract(contract, options = {}) {
   if (String(source.authority || "") !== BACKTEST_CONTRACT_AUTHORITY) reasons.push("contract_authority_invalid");
   if (String(source.status || "") !== "frozen") reasons.push("contract_not_frozen");
   if (!/^v\d+$/.test(String(source.contractVersion || ""))) reasons.push("contract_version_invalid");
-  if (!["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8"].includes(contractVersion)) reasons.push("contract_version_unsupported");
+  if (!["v1", "v2", "v3", "v4", "v5", "v6", "v7", "v8", "v9"].includes(contractVersion)) reasons.push("contract_version_unsupported");
   if (!/^[a-f0-9]{40}$/.test(sourceCommit)) reasons.push("strategy_source_commit_invalid");
   if (!String(baseline.baselineId || "").trim()) reasons.push("strategy_baseline_id_missing");
   if (!/^[a-f0-9]{64}$/.test(String(baseline.strategyHash || ""))) reasons.push("strategy_hash_missing_or_invalid");
@@ -1938,10 +1938,10 @@ function inspectBacktestExecutionReadiness(contract, input = {}, options = {}) {
   );
   const positionEnginePath = path.join(root, "backtest", "position-engine.js");
 
-  if (!["v7", "v8"].includes(String(source.contractVersion || ""))) {
+  if (!["v7", "v8", "v9"].includes(String(source.contractVersion || ""))) {
     reasons.push("contract_version_not_execution_target");
   }
-  if (["v7", "v8"].includes(String(source.contractVersion || ""))
+  if (["v7", "v8", "v9"].includes(String(source.contractVersion || ""))
     && input.sellVariant === "FULL_1M_TICK"
     && source.sellVariants && source.sellVariants.FULL_1M_TICK
     && source.sellVariants.FULL_1M_TICK.productionInputAvailable !== true) {
@@ -1992,11 +1992,11 @@ function createBacktestRunManifest(contract, input = {}) {
     throw new Error("lane must be asDecided or counterfactual");
   }
   const sellVariant = String(input.sellVariant || "");
-  if (["v7", "v8"].includes(String(contract.contractVersion || ""))
+  if (["v7", "v8", "v9"].includes(String(contract.contractVersion || ""))
     && !["CORE_1M", "FULL_1M_TICK"].includes(sellVariant)) {
     throw new Error("sellVariant must be CORE_1M or FULL_1M_TICK");
   }
-  if (["v7", "v8"].includes(String(contract.contractVersion || ""))
+  if (["v7", "v8", "v9"].includes(String(contract.contractVersion || ""))
     && sellVariant === "FULL_1M_TICK"
     && contract.sellVariants && contract.sellVariants.FULL_1M_TICK
     && contract.sellVariants.FULL_1M_TICK.productionInputAvailable !== true) {
@@ -2031,7 +2031,7 @@ function createBacktestRunManifest(contract, input = {}) {
     fillReceiptAnchorHash: readiness.fillReceiptAnchorHash,
     runtimeNodeVersion: readiness.runtimeNodeVersion,
     lane,
-    ...(["v7", "v8"].includes(String(contract.contractVersion || "")) ? { sellVariant } : {}),
+    ...(["v7", "v8", "v9"].includes(String(contract.contractVersion || "")) ? { sellVariant } : {}),
     runConfig,
   };
   return {

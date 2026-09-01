@@ -8,13 +8,13 @@
 
 Windows x64：
 
-- `A-shares-one-piece-Setup-1.2.1-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
-- `A-shares-one-piece-Portable-1.2.1-x64.exe`：免安装便携版，直接运行。
+- `A-shares-one-piece-Setup-1.2.2-x64.exe`：推荐，按安装向导安装，并创建桌面和开始菜单快捷方式。
+- `A-shares-one-piece-Portable-1.2.2-x64.exe`：免安装便携版，直接运行。
 
 macOS：
 
-- `A-shares-one-piece-1.2.1-mac-arm64.dmg`：Apple Silicon（M1、M2、M3、M4 等）使用。
-- `A-shares-one-piece-1.2.1-mac-x64.dmg`：Intel 处理器 Mac 使用。
+- `A-shares-one-piece-1.2.2-mac-arm64.dmg`：Apple Silicon（M1、M2、M3、M4 等）使用。
+- `A-shares-one-piece-1.2.2-mac-x64.dmg`：Intel 处理器 Mac 使用。
 
 Mac 用户打开 DMG 后，将“A股短线模型”拖入“应用程序”目录再运行。
 
@@ -26,7 +26,7 @@ Mac 用户打开 DMG 后，将“A股短线模型”拖入“应用程序”目�
 
 1. 保持网络连接，启动后等待本地数据服务完成初始化。
 2. 点击“一键抓取并生成决策”获取当前交易日数据。
-3. 软件只在证据完整时生成观察结论；证据不足时保持空结果或明确失败关闭。
+3. 当日抓取成功且代次一致时，页面会正常展示市场与个股观察数据；证据不足只关闭正式决策和执行权限，不再隐藏整页数据。
 4. 非交易日、凌晨或首次安装且没有精确收盘档案时，页面可能显示“缺少同交易日精确收盘归档”。这不是买卖结论，也不能用未来热榜替代收盘证据。
 
 程序默认使用可用端口 `5173-5202`，本地数据保存在：

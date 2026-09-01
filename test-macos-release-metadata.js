@@ -14,8 +14,8 @@ const dmgValidator = fs.readFileSync(path.join(root, "release-tools", "Test-MacD
 const manifestBuilder = fs.readFileSync(path.join(root, "release-tools", "build-mac-release-manifest.mjs"), "utf8");
 const readme = fs.readFileSync(path.join(root, "README.md"), "utf8");
 
-test("1.2.1同时声明Apple Silicon与Intel的未签名DMG", () => {
-  assert.equal(packageJson.version, "1.2.1");
+test("1.2.2同时声明Apple Silicon与Intel的未签名DMG", () => {
+  assert.equal(packageJson.version, "1.2.2");
   assert.equal(packageLock.version, packageJson.version);
   assert.equal(packageLock.packages[""].version, packageJson.version);
   assert.deepEqual(packageJson.build.mac.target, ["dmg"]);
@@ -84,8 +84,8 @@ test("macOS清单固定记录未签名、未公证和逐架构SHA-256", () => {
 
 test("README明确Mac架构选择、数据目录和Gatekeeper风险", () => {
   for (const pattern of [
-    /A-shares-one-piece-1\.2\.1-mac-arm64\.dmg/,
-    /A-shares-one-piece-1\.2\.1-mac-x64\.dmg/,
+    /A-shares-one-piece-1\.2\.2-mac-arm64\.dmg/,
+    /A-shares-one-piece-1\.2\.2-mac-x64\.dmg/,
     /Apple Silicon/,
     /Intel/,
     /Library\/Application Support\/a-share-trading-model\/runtime/,
