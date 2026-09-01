@@ -267,7 +267,8 @@ test("previousLimitUpOnly rows are excluded from every market sample projection"
   assert.match(serverSource, /classifyTradingStyle\(marketState, hotConcepts, marketProfiled\)/);
   assert.match(serverSource, /const candidates = excludePreviousLimitUpOnly\(allCandidates\)/);
   assert.match(serverSource, /buildTradingStylePreference\(marketSamplePayload\(payload\)/);
-  assert.match(serverSource, /await enrichEvidence\(marketProfiled\)/);
+  assert.match(serverSource, /DATA_CAPABILITIES\.STOCK_EVIDENCE,[\s\S]*?\[marketProfiled\]/);
+  assert.match(serverSource, /marketProfiled\.forEach\(\(stock\) => \{/);
   assert.match(serverSource, /klineOk: marketProfiled\.filter/);
   assert.match(serverSource, /buildMarketEffectAttribution\(marketSamplePayload\(payload\)\)/);
   assert.match(serverSource, /previousLimitUpQuoteTargets/);
