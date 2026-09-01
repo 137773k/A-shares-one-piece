@@ -4,7 +4,7 @@ const crypto = require("node:crypto");
 const fs = require("node:fs");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
-const { stableSerialize } = require("./contract");
+const { stableSerialize } = require("../quant-decision/decision-receipt");
 
 const ENGINE_LOCK_AUTHORITY = "a_share_decision_engine_lock_v1";
 const ENGINE_LOCK_VERSION = "v1";
