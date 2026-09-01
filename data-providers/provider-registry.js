@@ -3,6 +3,9 @@
 const {
   CAPABILITY_VALUES,
   createCapabilityEnvelope,
+  inferAdjustment,
+  inferObservedAt,
+  inferTradingDate,
   validateCapabilityEnvelope,
   validateProviderDescriptor,
 } = require("./contracts");
@@ -49,9 +52,9 @@ class DataProviderRegistry {
               capability,
               providerId: provider.id,
               data: raw,
-              observedAt: context.observedAt,
-              tradingDate: context.tradingDate,
-              adjustment: context.adjustment,
+              observedAt: inferObservedAt(raw) || context.observedAt,
+              tradingDate: inferTradingDate(raw) || context.tradingDate,
+              adjustment: inferAdjustment(raw) || context.adjustment,
               quality: raw === null || raw === undefined ? "unavailable" : "live",
             });
         const inspection = validateCapabilityEnvelope(envelope, {

@@ -23,6 +23,12 @@ const CAPABILITIES = Object.freeze({
 
 const CAPABILITY_VALUES = Object.freeze(Object.values(CAPABILITIES));
 const QUALITY_STATES = Object.freeze(["live", "verified_cache", "partial", "unavailable"]);
+const TRADING_DATE_REQUIRED_CAPABILITIES = Object.freeze(new Set([
+  CAPABILITIES.MARKET_SNAPSHOT,
+  CAPABILITIES.LIMIT_STATS,
+  CAPABILITIES.QUOTES,
+  CAPABILITIES.DAILY_KLINE,
+]));
 const FORBIDDEN_AUTHORITY_KEYS = Object.freeze(new Set([
   "bestPicks",
   "decisionReceipt",
@@ -46,6 +52,38 @@ function normalizeTradingDate(value) {
 
 function validIso(value) {
   return Boolean(text(value) && Number.isFinite(Date.parse(value)));
+}
+
+function inferTradingDate(data) {
+  const source = data && typeof data === "object" ? data : {};
+  const lastRow = Array.isArray(data) && data.length ? data[data.length - 1] : null;
+  return normalizeTradingDate(
+    source.tradingDate
+    || source.marketDataTradingDate
+    || source.sourceMeta && source.sourceMeta.tradingDate
+    || source.meta && (source.meta.tradingDate || source.meta.marketDataTradingDate)
+    || source.dates && source.dates.today
+    || source.snapshot && source.snapshot.tradingDate
+    || lastRow && (lastRow.tradingDate || lastRow.date),
+  );
+}
+
+function inferObservedAt(data) {
+  const source = data && typeof data === "object" ? data : {};
+  const value = source.observedAt || source.fetchedAt || source.updatedAt
+    || source.sourceMeta && (source.sourceMeta.observedAt || source.sourceMeta.fetchedAt)
+    || source.meta && (source.meta.observedAt || source.meta.fetchedAt);
+  return validIso(value) ? String(value) : "";
+}
+
+function inferAdjustment(data) {
+  const source = data && typeof data === "object" ? data : {};
+  return text(
+    source.adjustment
+    || source.priceAdjustment
+    || source.sourceMeta && (source.sourceMeta.adjustment || source.sourceMeta.priceAdjustment)
+    || source.meta && (source.meta.adjustment || source.meta.priceAdjustment),
+  );
 }
 
 function findForbiddenAuthority(value, path = "data", depth = 0) {
@@ -122,6 +160,9 @@ function validateCapabilityEnvelope(envelope, options = {}) {
   if (source.executionAuthority !== false) reasons.push("capability_envelope_execution_authority_invalid");
   if (source.usable === true && source.data === null) reasons.push("capability_envelope_usable_data_missing");
   const expectedTradingDate = normalizeTradingDate(options.expectedTradingDate);
+  if (options.requireTradingDate === true && !source.tradingDate) {
+    reasons.push("capability_envelope_trading_date_missing");
+  }
   if (expectedTradingDate && source.tradingDate && source.tradingDate !== expectedTradingDate) {
     reasons.push("capability_envelope_trading_date_mismatch");
   }
@@ -143,6 +184,7 @@ function createDataBundle({ generationContext = null, envelopes = [] } = {}) {
   sourceEnvelopes.forEach((envelope) => {
     const inspection = validateCapabilityEnvelope(envelope, {
       expectedTradingDate: generationContext && generationContext.tradingDate,
+      requireTradingDate: TRADING_DATE_REQUIRED_CAPABILITIES.has(envelope && envelope.capability),
     });
     if (!inspection.valid) {
       invalid.push({ capability: envelope && envelope.capability || null, reasons: inspection.reasons });
@@ -184,9 +226,13 @@ module.exports = {
   DATA_BUNDLE_VERSION,
   PROVIDER_CONTRACT_VERSION,
   QUALITY_STATES,
+  TRADING_DATE_REQUIRED_CAPABILITIES,
   createCapabilityEnvelope,
   createDataBundle,
   findForbiddenAuthority,
+  inferAdjustment,
+  inferObservedAt,
+  inferTradingDate,
   normalizeTradingDate,
   validateCapabilityEnvelope,
   validateProviderDescriptor,

@@ -127,6 +127,13 @@ const {
   resolveHotRankSource,
   updateHotRankCache,
 } = require("./hot-rank-source");
+const {
+  CAPABILITIES: DATA_CAPABILITIES,
+  DataProviderRegistry,
+  createDataBundle,
+  createFreeFallbackProvider,
+  loadConfiguredProviders,
+} = require("./data-providers");
 
 const { resolveDecisionPrice, applyBestPickPriceIntegrity } = require("./price-integrity");
 
@@ -24144,8 +24151,7 @@ async function fetchTencentRawKlineRows(stock, limit = 180, options = {}) {
   }
 }
 
-async function fetchKlineRows(stock, limit = 180, stats = klineSourceStats) {
-  stats.requested = Number(stats.requested || 0) + 1;
+async function fetchKlineRowsFreeFallback(stock, limit = 180, stats = klineSourceStats) {
 
 
 
@@ -24548,21 +24554,23 @@ async function fetchKlineRows(stock, limit = 180, stats = klineSourceStats) {
 
 
   return tencentRows;
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+async function fetchKlineRows(stock, limit = 180, stats = klineSourceStats, options = {}) {
+  stats.requested = Number(stats.requested || 0) + 1;
+  const registry = options.providerRegistry || getMarketDataProviderRegistry();
+  const result = await registry.invoke(DATA_CAPABILITIES.DAILY_KLINE, [stock, limit, stats], {
+    observedAt: nowIso(),
+  });
+  if (result.envelope && result.envelope.usable === true && Array.isArray(result.envelope.data)) {
+    return result.envelope.data;
+  }
+  return attachKlineRowsMeta([], {
+    source: "provider-registry",
+    status: "unavailable",
+    errorCode: "DATA_PROVIDER_CAPABILITY_UNAVAILABLE",
+    error: (result.attempts || []).flatMap((attempt) => attempt.reasons || []).join("；").slice(0, 300),
+  });
 }
 
 
@@ -77048,7 +77056,122 @@ function mergeCachedRecentLimitUpEvidence(payload) {
   };
 }
 
-async function hotStocksPayload() {
+let configuredMarketDataRegistry = null;
+const registeredMarketDataProviders = [];
+let marketDataProviderDiagnostics = {
+  version: 1,
+  configured: false,
+  mode: "auto",
+  enabledCount: 0,
+  errors: [],
+  freeFallbackEnabled: true,
+  credentialsStoredInConfig: false,
+};
+
+function createFreeFallbackMarketDataProvider() {
+  return createFreeFallbackProvider({
+    fetchEastmoneyRank,
+    fetchThsHotList,
+    fetchMarketSnapshot,
+    fetchExternalSnapshot,
+    fetchLimitStats,
+    fetchGlobalNews,
+    fetchEventTimeline: (options = {}) => fetchJiuyanTimeline(options),
+    fetchMarketCalendar: (options = {}) => fetchMarketCalendar(options),
+    fetchQuotes: (stocks) => fetchEastmoneyQuotes(stocks),
+    fetchDailyKline: (stock, limit, stats) => fetchKlineRowsFreeFallback(stock, limit, stats),
+    fetchSectors: () => fetchEastmoneySectors(),
+    fetchStockNews: (code) => fetchStockNews(code),
+  });
+}
+
+function createMarketDataProviderRegistry(providers = registeredMarketDataProviders) {
+  const registry = new DataProviderRegistry();
+  (Array.isArray(providers) ? providers : []).forEach((provider) => registry.register(provider));
+  registry.register(createFreeFallbackMarketDataProvider());
+  return registry;
+}
+
+function registerMarketDataProvider(provider) {
+  if (configuredMarketDataRegistry) throw new Error("数据源注册必须在首次行情刷新前完成");
+  registeredMarketDataProviders.push(provider);
+  return provider;
+}
+
+function resetMarketDataProviderRegistryForTests() {
+  configuredMarketDataRegistry = null;
+  registeredMarketDataProviders.length = 0;
+  marketDataProviderDiagnostics = {
+    version: 1,
+    configured: false,
+    mode: "auto",
+    enabledCount: 0,
+    errors: [],
+    freeFallbackEnabled: true,
+    credentialsStoredInConfig: false,
+  };
+}
+
+function getMarketDataProviderRegistry() {
+  if (!configuredMarketDataRegistry) {
+    const loaded = loadConfiguredProviders({ runtimeRoot });
+    const registry = new DataProviderRegistry();
+    [...registeredMarketDataProviders, ...loaded.providers].forEach((provider) => {
+      try {
+        registry.register(provider);
+      } catch (error) {
+        loaded.diagnostics.errors.push(`provider_registration_failed:${String(error && error.message || error).slice(0, 180)}`);
+      }
+    });
+    registry.register(createFreeFallbackMarketDataProvider());
+    configuredMarketDataRegistry = registry;
+    marketDataProviderDiagnostics = {
+      ...loaded.diagnostics,
+      errors: Array.from(new Set(loaded.diagnostics.errors)),
+    };
+  }
+  return configuredMarketDataRegistry;
+}
+
+function dataProviderStatus() {
+  const registry = getMarketDataProviderRegistry();
+  return {
+    version: 1,
+    providers: registry.list(),
+    configuration: { ...marketDataProviderDiagnostics },
+    engineLock: {
+      authority: "a_share_decision_engine_lock_v1",
+      version: "v1",
+      decisionLogicMutableByProvider: false,
+    },
+  };
+}
+
+async function requiredProviderCapability(registry, capability, args = [], context = {}) {
+  const result = await registry.invoke(capability, args, context);
+  if (!result.envelope || result.envelope.usable !== true) {
+    const error = new Error(`数据能力不可用：${capability}`);
+    error.code = "DATA_PROVIDER_CAPABILITY_UNAVAILABLE";
+    error.capability = capability;
+    error.attempts = result.attempts;
+    throw error;
+  }
+  return result;
+}
+
+function projectDataBundleMetadata(bundle) {
+  return {
+    version: bundle.version,
+    authority: bundle.authority,
+    generationContext: bundle.generationContext,
+    capabilities: bundle.capabilities,
+    lineage: bundle.lineage,
+    quality: bundle.quality,
+    executionAuthority: false,
+  };
+}
+
+async function hotStocksPayload(options = {}) {
 
 
 
@@ -77096,7 +77219,9 @@ async function hotStocksPayload() {
 
 
 
-    const [eastRankLive, thsRowsLive, marketSnapshot, externalSnapshot, limitStats, globalNews, jiuyanTimeline, marketRiskCalendar] = await Promise.all([
+    const providerRegistry = options.providerRegistry || getMarketDataProviderRegistry();
+    const providerObservedAt = nowIso();
+    const providerResults = await Promise.all([
 
 
 
@@ -77112,7 +77237,7 @@ async function hotStocksPayload() {
 
 
 
-      fetchEastmoneyRank(),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.HOT_RANK_EASTMONEY, [], { observedAt: providerObservedAt }),
 
 
 
@@ -77128,7 +77253,7 @@ async function hotStocksPayload() {
 
 
 
-      fetchThsHotList(),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.HOT_RANK_THS, [], { observedAt: providerObservedAt }),
 
 
 
@@ -77144,7 +77269,7 @@ async function hotStocksPayload() {
 
 
 
-      fetchMarketSnapshot(),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.MARKET_SNAPSHOT, [], { observedAt: providerObservedAt }),
 
 
 
@@ -77160,7 +77285,7 @@ async function hotStocksPayload() {
 
 
 
-      fetchExternalSnapshot(),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.EXTERNAL_SNAPSHOT, [], { observedAt: providerObservedAt }),
 
 
 
@@ -77176,7 +77301,7 @@ async function hotStocksPayload() {
 
 
 
-      fetchLimitStats(),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.LIMIT_STATS, [], { observedAt: providerObservedAt }),
 
 
 
@@ -77192,17 +77317,17 @@ async function hotStocksPayload() {
 
 
 
-      fetchGlobalNews(40),
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.GLOBAL_NEWS, [40], { observedAt: providerObservedAt }),
 
-      fetchJiuyanTimeline({
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.EVENT_TIMELINE, [{
         cacheFile: jiuyanTimelineCacheFile,
         forceRefresh: true,
-      }),
+      }], { observedAt: providerObservedAt }),
 
-      fetchMarketCalendar({
+      requiredProviderCapability(providerRegistry, DATA_CAPABILITIES.MARKET_CALENDAR, [{
         cacheFile: marketCalendarCacheFile,
         forceRefresh: true,
-      }),
+      }], { observedAt: providerObservedAt }),
 
 
 
@@ -77233,6 +77358,10 @@ async function hotStocksPayload() {
 
 
 
+
+    const [eastRankLive, thsRowsLive, marketSnapshot, externalSnapshot, limitStats, globalNews, jiuyanTimeline, marketRiskCalendar]
+      = providerResults.map((result) => result.envelope.data);
+    const dataProviderEnvelopes = providerResults.map((result) => result.envelope);
 
     const rankNow = new Date();
     const hotRankCache = loadHotRankCache();
@@ -77353,7 +77482,18 @@ async function hotStocksPayload() {
       const code = String(item && (item.code || item.secCode) || "");
       if (code && !quoteTargetMap.has(code)) quoteTargetMap.set(code, item);
     });
-    const eastQuotes = await fetchEastmoneyQuotes(Array.from(quoteTargetMap.values()));
+    const quoteProviderResult = await requiredProviderCapability(
+      providerRegistry,
+      DATA_CAPABILITIES.QUOTES,
+      [Array.from(quoteTargetMap.values())],
+      {
+        observedAt: nowIso(),
+        tradingDate: limitStats && limitStats.dates && limitStats.dates.today,
+        expectedTradingDate: limitStats && limitStats.dates && limitStats.dates.today,
+      },
+    );
+    const eastQuotes = quoteProviderResult.envelope.data;
+    dataProviderEnvelopes.push(quoteProviderResult.envelope);
     const supplementalQuoteTargetMap = new Map();
     [...previousLimitUpSeeds, ...styleOutcomeSeeds].forEach((seed) => {
       const code = String(seed && (seed.code || seed.secCode) || "");
@@ -77363,7 +77503,17 @@ async function hotStocksPayload() {
     let previousLimitUpQuotes = new Map();
     if (previousLimitUpQuoteTargets.length) {
       try {
-        previousLimitUpQuotes = await fetchEastmoneyQuotes(previousLimitUpQuoteTargets);
+        const supplementalQuoteResult = await requiredProviderCapability(
+          providerRegistry,
+          DATA_CAPABILITIES.QUOTES,
+          [previousLimitUpQuoteTargets],
+          {
+            observedAt: nowIso(),
+            tradingDate: limitStats && limitStats.dates && limitStats.dates.today,
+            expectedTradingDate: limitStats && limitStats.dates && limitStats.dates.today,
+          },
+        );
+        previousLimitUpQuotes = supplementalQuoteResult.envelope.data;
       } catch {
         // 补充观察池报价失败不得污染或阻断主热榜报价。
         previousLimitUpQuotes = new Map();
@@ -78314,7 +78464,14 @@ async function hotStocksPayload() {
 
 
 
-    const sectorRows = await fetchEastmoneySectors();
+    const sectorProviderResult = await requiredProviderCapability(
+      providerRegistry,
+      DATA_CAPABILITIES.SECTORS,
+      [],
+      { observedAt: nowIso() },
+    );
+    const sectorRows = sectorProviderResult.envelope.data;
+    dataProviderEnvelopes.push(sectorProviderResult.envelope);
 
 
 
@@ -78698,6 +78855,13 @@ async function hotStocksPayload() {
       tradingDate: limitStats && limitStats.dates && limitStats.dates.today,
       asOf: nowIso(),
     });
+    const coreDataBundle = createDataBundle({ generationContext, envelopes: dataProviderEnvelopes });
+    if (coreDataBundle.quality.status === "invalid") {
+      const error = new Error("数据源输出未通过统一DataBundle契约");
+      error.code = "DATA_BUNDLE_INVALID";
+      error.details = coreDataBundle.quality.invalid;
+      throw error;
+    }
     const freshRoleContext = {
       generationContext,
       asOf: generationContext.asOf,
@@ -79572,6 +79736,8 @@ async function hotStocksPayload() {
 
         ths: thsRows.length,
         hotRanks: rankSources,
+        dataProviderBundle: projectDataBundleMetadata(coreDataBundle),
+        dataProviderConfiguration: { ...marketDataProviderDiagnostics },
         previousLimitUpSeeds: {
           authority: "exact_t1_closing_limit_pool",
           expectedTradingDate: previousLimitUpExpectedDate || null,
@@ -83014,6 +83180,15 @@ async function handleApi(request, response, pathname) {
     return;
   }
 
+  if (pathname === "/api/data-providers/status") {
+    if (request.method !== "GET") {
+      sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
+      return;
+    }
+    sendJson(response, 200, { ok: true, dataProviders: dataProviderStatus() });
+    return;
+  }
+
   if (pathname === "/api/hot-stocks/status") {
     if (request.method !== "GET") {
       sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
@@ -85291,6 +85466,16 @@ module.exports = {
 
 
   hotStocksPayload,
+  dataProviderInternals: {
+    createFreeFallbackMarketDataProvider,
+    createMarketDataProviderRegistry,
+    dataProviderStatus,
+    getMarketDataProviderRegistry,
+    projectDataBundleMetadata,
+    registerMarketDataProvider,
+    requiredProviderCapability,
+    resetMarketDataProviderRegistryForTests,
+  },
   klineQualityInternals: {
     createKlineSourceStats,
     summarizeKlineProfileScope,

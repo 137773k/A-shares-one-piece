@@ -5,6 +5,7 @@ const test = require("node:test");
 const {
   CAPABILITIES,
   DataProviderRegistry,
+  createCapabilityEnvelope,
   createDataBundle,
   createFreeFallbackProvider,
 } = require("./data-providers");
@@ -109,4 +110,23 @@ test("DataBundle只保留证据与来源血缘，永远没有执行权限", asyn
   assert.equal(bundle.lineage.length, 2);
   assert.equal(bundle.data.market_snapshot.amountYi, 20334.03);
   assert.equal(bundle.data.limit_stats.ztToday, 78);
+});
+
+test("正式能力必须带可核验交易日，缺日期的DataBundle失败关闭", () => {
+  const envelope = createCapabilityEnvelope({
+    capability: CAPABILITIES.MARKET_SNAPSHOT,
+    providerId: "custom-provider",
+    observedAt: "2026-09-01T07:30:00.000Z",
+    data: { amountYi: 20334.03 },
+  });
+  const bundle = createDataBundle({
+    generationContext: {
+      generationId: "2026-09-01:2026-09-01T07:30:00.000Z",
+      tradingDate: "2026-09-01",
+      asOf: "2026-09-01T07:30:00.000Z",
+    },
+    envelopes: [envelope],
+  });
+  assert.equal(bundle.quality.status, "invalid");
+  assert.match(bundle.quality.invalid[0].reasons.join("；"), /trading_date_missing/);
 });

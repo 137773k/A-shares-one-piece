@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "mode": "custom_first",
+  "providers": [
+    {
+      "module": "my-provider.cjs",
+      "enabled": false,
+      "priority": 100,
+      "credentialEnv": [
+        "MY_MARKET_DATA_TOKEN"
+      ]
+    }
+  ]
+}
