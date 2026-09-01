@@ -104,7 +104,7 @@ function evaluateStrictClosingPayload(payload, expectedDateValue, options = {}) 
   const fetchLevel = String(payload && payload.fetchStatus && payload.fetchStatus.level || "")
     .trim()
     .toLowerCase();
-  const fetchEvidenceQuality = resolveFetchEvidenceQuality(payload, expectedDate);
+  const fetchEvidenceQuality = resolveFetchEvidenceQuality(payload, expectedDate, { marketOnly: true });
   if (!fetchEvidenceQuality.closingEvidenceUsable) reasons.push(...(
     fetchEvidenceQuality.reasons.length ? fetchEvidenceQuality.reasons : ["fetch_evidence_unusable"]
   ));

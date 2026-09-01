@@ -77,3 +77,39 @@ test("非正式兼容归档可保留unavailable凭证，但绝不获得as-decide
   assert.equal(saved.decisionReceipt.decision.result.selectedCount, 0);
   assert.equal(saved.decisionReceipt.source.legacySelectedIsExecutionAuthority, false);
 });
+
+test("首次安装可保存只读收盘市场证据，但明确不属于正式决策历史", () => {
+  const payload = {
+    fetchedAt: "2026-08-27T07:20:00.000Z",
+    updatedAt: "2026-08-27T07:20:00.000Z",
+    asOf: "2026-08-27T07:20:00.000Z",
+    tradingDate: "2026-08-27",
+    generationId: "2026-08-27:2026-08-27T07:20:00.000Z",
+    generationContext: {
+      version: 1,
+      tradingDate: "2026-08-27",
+      asOf: "2026-08-27T07:20:00.000Z",
+      generationId: "2026-08-27:2026-08-27T07:20:00.000Z",
+    },
+    fetchStatus: { level: "partial", evidenceStatus: "incomplete", marketEvidenceStatus: "complete" },
+    market: { limitStats: { dates: { today: "20260827", prev: "20260826", verified: true } } },
+    candidates: [],
+  };
+  const result = _internals.autoArchiveMarketSnapshot(payload, {
+    trigger: "bootstrap-observation",
+    mode: "bootstrap_observation",
+    requireCanonicalDecisionReceipt: false,
+    settlePreviousDecision: false,
+  });
+  assert.equal(result.ok, true);
+  assert.equal(result.canonicalDecisionReceipt, false);
+  const saved = JSON.parse(fs.readFileSync(
+    path.join(runtimeRoot, "data", "history", "2026-08-27.json"),
+    "utf8",
+  ));
+  assert.equal(saved.archiveMeta.authorityScope, "market_evidence_bootstrap_only");
+  assert.equal(saved.archiveMeta.observationOnly, true);
+  assert.equal(saved.archiveMeta.executionAuthority, false);
+  assert.equal(saved.archiveMeta.decisionReceiptRequired, false);
+  assert.equal(saved.decisionReceipt.status, "unavailable");
+});

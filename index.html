@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>A股短线模型工作台</title>
-   <link rel="stylesheet" href="./styles.css?v=20260830-emotion-anchor-readable-v1" />
+   <link rel="stylesheet" href="./styles.css?v=20260901-data-management-v2" />
    <link rel="stylesheet" href="./ui-refresh.css?v=20260830-focus-watchlist-v1" />
   </head>
   <body>
@@ -1399,12 +1399,90 @@
           <div id="entryHistoryList" class="history-list"></div>
         </section>
 
+        <section id="data-management" class="section data-management-section" data-view="dashboard">
+          <div class="section-heading">
+            <p class="eyebrow">LOCAL DATA CONTROL</p>
+            <h2>数据源与历史初始化</h2>
+            <p>这里只管理行情证据。数据源可以替换，冻结决策引擎、选股规则和交易权限不会随配置改变。</p>
+          </div>
+          <div id="dataManagementNotice" class="data-management-notice" role="status" aria-live="polite">正在读取本机数据状态…</div>
+          <div class="data-management-summary">
+            <article>
+              <span>当前数据模式</span>
+              <strong id="dataProviderMode">读取中</strong>
+              <small id="dataProviderFallback">免费保底源状态待确认</small>
+            </article>
+            <article>
+              <span>自定义数据源</span>
+              <strong id="dataProviderEnabledCount">--</strong>
+              <small id="dataProviderModuleCount">正在扫描 data/providers</small>
+            </article>
+            <article>
+              <span>最近5日历史</span>
+              <strong id="historyBootstrapCoverage">-- / 5</strong>
+              <small id="historyBootstrapState">历史不足时保持未确认</small>
+            </article>
+            <article>
+              <span>决策引擎</span>
+              <strong>冻结 v1</strong>
+              <small>数据适配器无执行权限</small>
+            </article>
+          </div>
+
+          <div class="data-management-grid">
+            <article class="data-management-panel">
+              <div class="data-management-panel-head">
+                <div>
+                  <span>数据源优先级</span>
+                  <h3>用户源优先，免费源保底</h3>
+                </div>
+                <button id="dataProviderRefreshBtn" class="secondary-btn" type="button">重新读取</button>
+              </div>
+              <label class="data-provider-mode-field">
+                <span>调用模式</span>
+                <select id="dataProviderModeSelect">
+                  <option value="auto">自动使用免费保底源</option>
+                  <option value="custom_first">自定义源优先，失败后回退</option>
+                </select>
+              </label>
+              <div id="dataProviderModuleList" class="data-provider-module-list">
+                <div class="empty-state">正在扫描可用适配器模块…</div>
+              </div>
+              <p class="data-management-help">把适配器文件放入 <code>data/providers</code>。Token、密码、Cookie 不会写进配置，只允许填写本机环境变量名称。</p>
+              <div class="data-management-actions">
+                <button id="dataProviderSaveBtn" class="primary-btn" type="button">保存并重载数据源</button>
+              </div>
+            </article>
+
+            <article class="data-management-panel">
+              <div class="data-management-panel-head">
+                <div>
+                  <span>首次使用</span>
+                  <h3>严格历史准备度</h3>
+                </div>
+                <span id="historyBootstrapBadge" class="data-management-badge is-waiting">待积累</span>
+              </div>
+              <p id="historyBootstrapNote" class="data-management-help">系统只承认连续5个实际交易日的严格收盘归档，不会用更早日期硬补。</p>
+              <div id="historyBootstrapMissing" class="history-bootstrap-missing"></div>
+              <div class="history-bootstrap-import">
+                <strong>已有旧版本归档时</strong>
+                <p>将本软件生成的 <code>YYYY-MM-DD.json</code> 放入 <code>data/history-import</code>，再执行校验导入。不同字节的同日文件不会覆盖。</p>
+                <span id="historyBootstrapPending">待导入文件：0</span>
+              </div>
+              <div class="data-management-actions">
+                <button id="historyBootstrapImportBtn" class="secondary-btn" type="button">扫描并校验导入</button>
+              </div>
+              <p class="data-management-warning">开源包不内置第三方原始行情历史；没有可信旧归档时，软件会从今后的有效收盘日开始自动积累。</p>
+            </article>
+          </div>
+        </section>
+
       </main>
     </div>
 
     <script src="./sell-engine.js"></script>
    <script src="./preplan-scenario-workbench.js?v=20260830-v1"></script>
    <script src="./premarket-flow.js?v=20260830-conditional-playbook-v1"></script>
-  <script src="./script.js?v=20260830-focus-watchlist-v1"></script>
+  <script src="./script.js?v=20260901-data-management-v2"></script>
   </body>
 </html>

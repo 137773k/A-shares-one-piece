@@ -118,6 +118,7 @@ const {
 const { buildEmotionCycleState } = require("./emotion-cycle-engine");
 const { buildPremarketFlow } = require("./premarket-flow");
 const { serveIndexOpportunityEvidence } = require("./index-opportunity-evidence");
+const { historyBootstrapStatus, importHistoryBootstrap } = require("./history-bootstrap");
 const { resolveFetchEvidenceQuality } = require("./fetch-evidence-quality");
 const {
   HOT_RANK_TARGET,
@@ -133,6 +134,8 @@ const {
   createDataBundle,
   createFreeFallbackProvider,
   loadConfiguredProviders,
+  publicProviderConfiguration,
+  writeProviderConfiguration,
 } = require("./data-providers");
 
 const { resolveDecisionPrice, applyBestPickPriceIntegrity } = require("./price-integrity");
@@ -6767,7 +6770,7 @@ function strictExactClosingEvidence(payload, expectedDateValue) {
   const fetchLevel = String(payload && payload.fetchStatus && payload.fetchStatus.level || "")
     .trim()
     .toLowerCase();
-  const fetchEvidenceQuality = resolveFetchEvidenceQuality(payload, expectedDate);
+  const fetchEvidenceQuality = resolveFetchEvidenceQuality(payload, expectedDate, { marketOnly: true });
   const payloadDate = normalizeTradingDate(marketSnapshotTradingDate(payload));
   const archiveDateRaw = String(payload && payload.archiveMeta && payload.archiveMeta.tradingDate || "").trim();
   const archiveDate = normalizeTradingDate(archiveDateRaw);
@@ -7341,6 +7344,9 @@ function markCycleHistoryUnavailable(payload, result) {
     ...currentFetchStatus,
     level: currentFetchStatus.level === "fail" ? "fail" : "partial",
     operationalLevel: currentFetchStatus.operationalLevel === "fail" ? "fail" : "degraded",
+    marketEvidenceStatus: currentFetchStatus.marketEvidenceStatus
+      || currentFetchStatus.evidenceStatus
+      || "unavailable",
     evidenceStatus: "incomplete",
     items: currentItems.concat({
       name: "情绪大周期历史",
@@ -7677,6 +7683,12 @@ function autoArchiveMarketSnapshot(payload, options = {}) {
         generationContext,
         archivedAt: nowIso(),
         decisionReceiptRequired,
+        ...(trigger === "bootstrap-observation" ? {
+          authorityScope: "market_evidence_bootstrap_only",
+          observationOnly: true,
+          executionAuthority: false,
+          note: "仅用于首次安装积累严格收盘市场证据；不授予交易或决策执行权限。",
+        } : {}),
       },
     };
     let receiptLineage = null;
@@ -23290,6 +23302,10 @@ function createKlineSourceStats() {
     liveDateMismatch: 0,
     staleCacheRejected: 0,
     unavailable: 0,
+    unavailableSamples: [],
+    criticalUnavailable: 0,
+    structuralExcluded: 0,
+    structuralExclusionSamples: [],
     fail: 0,
     eastAttempts: 0,
     tencentAttempts: 0,
@@ -23314,10 +23330,26 @@ function createKlineSourceStats() {
 
 function summarizeKlineProfileScope(rows, aggregateStats = {}) {
   const items = Array.isArray(rows) ? rows.filter(Boolean) : [];
-  const codes = new Set(items.map((item) => String(item.code || item.secCode || "")).filter(Boolean));
+  const eligibleItems = items.filter((item) => !(item.klineStructuralExclusion
+    && item.klineStructuralExclusion.marketEvidenceImpact === false));
+  const codes = new Set(eligibleItems.map((item) => String(item.code || item.secCode || "")).filter(Boolean));
   const summary = createKlineSourceStats();
-  summary.requested = items.length;
+  summary.totalObserved = items.length;
+  summary.requested = eligibleItems.length;
   items.forEach((item) => {
+    const structuralExclusion = item.klineStructuralExclusion
+      && typeof item.klineStructuralExclusion === "object" ? item.klineStructuralExclusion : null;
+    if (structuralExclusion && structuralExclusion.marketEvidenceImpact === false) {
+      summary.structuralExcluded += 1;
+      summary.structuralExclusionSamples.push({
+        code: String(item.code || item.secCode || "") || null,
+        name: String(item.name || "") || null,
+        reasonCode: structuralExclusion.reasonCode || "structural_exclusion",
+        tradingDays: Number(structuralExclusion.tradingDays || 0),
+        requiredTradingDays: Number(structuralExclusion.requiredTradingDays || 0),
+      });
+      return;
+    }
     const profile = item.klineProfile && typeof item.klineProfile === "object" ? item.klineProfile : null;
     const lineage = item.klineProfileLineage && typeof item.klineProfileLineage === "object"
       ? item.klineProfileLineage
@@ -23342,6 +23374,26 @@ function summarizeKlineProfileScope(rows, aggregateStats = {}) {
     } else {
       summary.unavailable += 1;
       summary.profileFailures = Number(summary.profileFailures || 0) + 1;
+      const ranks = [item.combinedRank, item.eastRank, item.thsRank]
+        .map(Number).filter((value) => Number.isFinite(value) && value > 0);
+      const bestRank = ranks.length ? Math.min(...ranks) : null;
+      const changePct = Number(item.changePct);
+      const boardCount = Number(item.boards || item.boardCount || item.limitUpDays || 0);
+      const criticalReasons = [];
+      if (bestRank !== null && bestRank <= 20) criticalReasons.push("hot_rank_top20");
+      if (item.inBothSources === true) criticalReasons.push("dual_rank_resonance");
+      if (Number.isFinite(changePct) && Math.abs(changePct) >= 9.5) criticalReasons.push("extreme_price_feedback");
+      if (Number.isFinite(boardCount) && boardCount >= 1) criticalReasons.push("height_or_limit_up_sample");
+      const sample = {
+        code: String(item.code || item.secCode || "") || null,
+        name: String(item.name || "") || null,
+        bestRank,
+        changePct: Number.isFinite(changePct) ? changePct : null,
+        critical: criticalReasons.length > 0,
+        criticalReasons,
+      };
+      summary.unavailableSamples.push(sample);
+      if (sample.critical) summary.criticalUnavailable += 1;
     }
     if (lineage.liveFetchFailed === true) summary.fail += 1;
     if (mode.includes("stale_cache_rejected") || mode.includes("future_cache_rejected")) {
@@ -24687,6 +24739,25 @@ function classifyKlineWave(input = {}) {
   return "非趋势波段";
 }
 
+function detectKlineStructuralExclusion(stock, rows) {
+  const sourceRows = Array.isArray(rows) ? rows : [];
+  if (sourceRows.length < 1 || sourceRows.length >= 3) return null;
+  const name = String(stock && (stock.name || stock.stockName) || "").trim().toUpperCase();
+  const explicitNewListing = stock && stock.isNewListing === true || /^[NC][^A-Z]/.test(name);
+  const validDates = sourceRows.every((row) => normalizeTradingDate(row && (row.date || row.tradingDate)));
+  if (!explicitNewListing || !validDates) return null;
+  return {
+    version: 1,
+    reasonCode: "listing_history_below_profile_minimum",
+    tradingDays: sourceRows.length,
+    requiredTradingDays: 3,
+    lastTradingDate: normalizeTradingDate(sourceRows.at(-1) && (sourceRows.at(-1).date || sourceRows.at(-1).tradingDate)) || null,
+    observationOnly: true,
+    marketEvidenceImpact: false,
+    executionAuthority: false,
+  };
+}
+
 async function fetchKlineProfile(stock, stats = klineSourceStats) {
 
 
@@ -24769,6 +24840,12 @@ async function fetchKlineProfile(stock, stats = klineSourceStats) {
 
 
 
+
+    const structuralExclusion = detectKlineStructuralExclusion(stock, rows);
+    if (structuralExclusion) {
+      stock.klineStructuralExclusion = structuralExclusion;
+      return null;
+    }
 
     // 次新股本来就没有完整的 20/60 日K线，不能因为样本不足直接丢掉。
     // 至少 3 个交易日即可建立“换手-成本”画像；老股仍沿用完整均线结构。
@@ -26217,7 +26294,16 @@ async function enrichKlineProfiles(rows, stats = klineSourceStats, options = {})
     const profiles = await Promise.all(chunk.map(async (entry) => {
       const stock = entry.stock;
       const profile = await fetchProfile(stock, stats);
-      if (!profile) {
+      if (!profile && stock.klineStructuralExclusion
+        && stock.klineStructuralExclusion.marketEvidenceImpact === false) {
+        stats.structuralExcluded = Number(stats.structuralExcluded || 0) + 1;
+        if (!Array.isArray(stats.structuralExclusionSamples)) stats.structuralExclusionSamples = [];
+        stats.structuralExclusionSamples.push({
+          code: String(stock && (stock.code || stock.secCode) || "") || null,
+          name: String(stock && stock.name || "") || null,
+          ...stock.klineStructuralExclusion,
+        });
+      } else if (!profile) {
         stats.profileFailures = Number(stats.profileFailures || 0) + 1;
         if (!Array.isArray(stats.profileErrorSamples)) stats.profileErrorSamples = [];
         if (stats.profileErrorSamples.length < 12) {
@@ -75138,23 +75224,45 @@ function buildFetchStatus(ctx) {
   const klineUnavailable = hasExplicitKlineQuality
     ? Math.max(0, Number(ctx.klineUnavailable || 0))
     : Math.max(0, klineRequested - Math.max(0, Number(ctx.klineOk || 0)));
+  const klineStructuralExcluded = Math.max(0, Number(ctx.klineStructuralExcluded || 0));
+  const klineUnavailableSamples = Array.isArray(ctx.klineUnavailableSamples)
+    ? ctx.klineUnavailableSamples.slice(0, 12) : [];
+  const klineCriticalUnavailable = Math.max(0, Number(ctx.klineCriticalUnavailable || 0));
+  const structuralExclusionSuffix = klineStructuralExcluded > 0
+    ? `；另有${klineStructuralExcluded}只上市不足3日，已退出模型K线样本`
+    : "";
   const klineResolved = klineLive + klineSameDayCache;
+  const klineCoverageRatio = klineRequested > 0 ? klineResolved / klineRequested : 0;
+  const klineBoundedCoverage = hasExplicitKlineQuality
+    && klineRequested >= 100
+    && klineUnavailable === 1
+    && klineUnavailableSamples.length === 1
+    && klineUnavailableSamples[0].critical === false
+    && klineCriticalUnavailable === 0
+    && klineCoverageRatio >= 0.99;
   const klineStatusKey = !hasExplicitKlineQuality
     ? "legacy_unannotated"
+    : klineBoundedCoverage
+      ? klineSameDayCache > 0 ? "degraded_bounded_coverage" : "live_bounded_coverage"
     : klineUnavailable > 0 || klineResolved < klineRequested
       ? "unavailable"
       : klineSameDayCache > 0
         ? "degraded_same_day_cache"
         : "live_complete";
-  const klineOperationalDegraded = klineStatusKey === "degraded_same_day_cache";
+  const klineOperationalDegraded = ["degraded_same_day_cache", "degraded_bounded_coverage", "live_bounded_coverage"]
+    .includes(klineStatusKey);
   const klineEligible = hasExplicitKlineQuality
     ? klineStatusKey !== "unavailable" && klineRequested > 0
     : Number(ctx.klineOk || 0) > 0;
   const klineNote = !hasExplicitKlineQuality ? "" : klineStatusKey === "live_complete"
-    ? `实时K线完整：${klineLive}/${klineRequested}只`
+    ? `实时K线完整：${klineLive}/${klineRequested}只${structuralExclusionSuffix}`
+    : klineStatusKey === "live_bounded_coverage"
+      ? `实时K线${klineLive}/${klineRequested}只；1只非关键尾部样本不可用，覆盖率${(klineCoverageRatio * 100).toFixed(2)}%，保留缺口并允许市场聚合${structuralExclusionSuffix}`
+      : klineStatusKey === "degraded_bounded_coverage"
+        ? `合格K线${klineResolved}/${klineRequested}只（含${klineSameDayCache}只同日缓存）；1只非关键尾部样本不可用，覆盖率${(klineCoverageRatio * 100).toFixed(2)}%${structuralExclusionSuffix}`
     : klineStatusKey === "degraded_same_day_cache"
-      ? `实时${klineLive}/${klineRequested}只；${klineSameDayCache}只使用${ctx.expectedCompletedKlineDate || "同交易日"}已验证缓存`
-      : `仅${klineResolved}/${klineRequested}只取得合格K线；${klineUnavailable}只不可用，旧缓存已拒绝`;
+      ? `实时${klineLive}/${klineRequested}只；${klineSameDayCache}只使用${ctx.expectedCompletedKlineDate || "同交易日"}已验证缓存${structuralExclusionSuffix}`
+      : `仅${klineResolved}/${klineRequested}只取得合格K线；${klineUnavailable}只不可用，旧缓存已拒绝${structuralExclusionSuffix}`;
   const klineDetails = {
     authority: "market_candidate_kline_scope",
     supplementalObservationExcluded: true,
@@ -75165,6 +75273,11 @@ function buildFetchStatus(ctx) {
       liveCount: klineLive,
       sameDayCacheCount: klineSameDayCache,
       unavailableCount: klineUnavailable,
+      unavailableSamples: klineUnavailableSamples,
+      criticalUnavailableCount: klineCriticalUnavailable,
+      coverageRatio: Math.round(klineCoverageRatio * 10000) / 10000,
+      boundedCoverageAccepted: klineBoundedCoverage,
+      structuralExcludedCount: klineStructuralExcluded,
       liveFailureCount: Math.max(0, Number(ctx.klineLiveFailed || 0)),
       eligibleForClosingDecision: klineEligible,
     },
@@ -75180,7 +75293,7 @@ function buildFetchStatus(ctx) {
     } : null,
     statusKey: klineStatusKey,
     degraded: klineOperationalDegraded,
-    liveComplete: klineStatusKey === "live_complete",
+    liveComplete: ["live_complete", "live_bounded_coverage"].includes(klineStatusKey),
     eligibleForClosingDecision: klineEligible,
     requestedCount: klineRequested,
     marketCandidateCount: Math.max(0, Number(ctx.total || 0)),
@@ -75191,6 +75304,13 @@ function buildFetchStatus(ctx) {
     sameDayCacheCount: klineSameDayCache,
     staleCacheRejectedCount: Math.max(0, Number(ctx.klineStaleCacheRejected || 0)),
     unavailableCount: klineUnavailable,
+    unavailableSamples: klineUnavailableSamples,
+    criticalUnavailableCount: klineCriticalUnavailable,
+    coverageRatio: Math.round(klineCoverageRatio * 10000) / 10000,
+    boundedCoverageAccepted: klineBoundedCoverage,
+    structuralExcludedCount: klineStructuralExcluded,
+    structuralExclusionSamples: Array.isArray(ctx.klineStructuralExclusionSamples)
+      ? ctx.klineStructuralExclusionSamples.slice(0, 12) : [],
     liveFailureCount: Math.max(0, Number(ctx.klineLiveFailed || 0)),
     expectedCompletedTradingDate: ctx.expectedCompletedKlineDate || null,
     cacheTradingDates: ctx.klineCacheTradingDates && typeof ctx.klineCacheTradingDates === "object"
@@ -75871,6 +75991,7 @@ function buildFetchStatus(ctx) {
     operationalLevel,
     mode: klineStatusKey,
     evidenceStatus: failed.length ? "incomplete" : klineEligible ? "complete" : "unavailable",
+    marketEvidenceStatus: failed.length ? "incomplete" : klineEligible ? "complete" : "unavailable",
     kline: { ...klineDetails },
     supplementalKline: supplementalKline ? {
       authority: "observation_only_supplemental_kline_scope",
@@ -77138,12 +77259,28 @@ function getMarketDataProviderRegistry() {
   return configuredMarketDataRegistry;
 }
 
+function reloadMarketDataProviderRegistry() {
+  configuredMarketDataRegistry = null;
+  marketDataProviderDiagnostics = {
+    version: 1,
+    configured: false,
+    mode: "auto",
+    enabledCount: 0,
+    errors: [],
+    freeFallbackEnabled: true,
+    credentialsStoredInConfig: false,
+  };
+  return getMarketDataProviderRegistry();
+}
+
 function dataProviderStatus() {
   const registry = getMarketDataProviderRegistry();
   return {
     version: 1,
     providers: registry.list(),
     configuration: { ...marketDataProviderDiagnostics },
+    settings: publicProviderConfiguration(runtimeRoot),
+    history: historyBootstrapStatus(runtimeRoot),
     engineLock: {
       authority: "a_share_decision_engine_lock_v1",
       version: "v1",
@@ -78325,6 +78462,17 @@ async function hotStocksPayload(options = {}) {
         klineProfileLineage: liveProfile && liveProfile.dataLineage
           ? { ...liveProfile.dataLineage }
           : cachedProfile && cachedProfile.dataLineage ? { ...cachedProfile.dataLineage }
+            : item.klineStructuralExclusion && item.klineStructuralExclusion.marketEvidenceImpact === false
+              ? {
+                  version: 1,
+                  mode: "structural_exclusion",
+                  liveFetchFailed: false,
+                  cacheAccepted: false,
+                  expectedTradingDate: expectedCompletedKlineDate || null,
+                  tradingDate: item.klineStructuralExclusion.lastTradingDate || null,
+                  cacheAgeMinutes: null,
+                  cacheReason: "上市交易日不足3日，退出正式K线样本",
+                }
             : {
                 version: 1,
                 mode: item.klineProfile ? `live_${liveAssessment.status}`
@@ -78385,9 +78533,12 @@ async function hotStocksPayload(options = {}) {
 
 
     });
-    const marketProfiled = excludePreviousLimitUpOnly(profiled);
+    const marketProfiledBeforeStructuralExclusion = excludePreviousLimitUpOnly(profiled);
+    const marketProfiled = marketProfiledBeforeStructuralExclusion.filter((item) => !(
+      item && item.klineStructuralExclusion && item.klineStructuralExclusion.marketEvidenceImpact === false
+    ));
     const supplementalProfiled = profiled.filter((item) => item && item.previousLimitUpOnly === true);
-    const marketKlineScope = summarizeKlineProfileScope(marketProfiled, klineStats);
+    const marketKlineScope = summarizeKlineProfileScope(marketProfiledBeforeStructuralExclusion, klineStats);
     const supplementalKlineScope = summarizeKlineProfileScope(supplementalProfiled, klineStats);
 
 
@@ -79506,6 +79657,12 @@ async function hotStocksPayload(options = {}) {
       klineSameDayCache: Number(marketKlineScope.sameDayCache || 0),
       klineStaleCacheRejected: Number(marketKlineScope.staleCacheRejected || 0),
       klineUnavailable: Number(marketKlineScope.unavailable || 0),
+      klineUnavailableSamples: Array.isArray(marketKlineScope.unavailableSamples)
+        ? marketKlineScope.unavailableSamples : [],
+      klineCriticalUnavailable: Number(marketKlineScope.criticalUnavailable || 0),
+      klineStructuralExcluded: Number(marketKlineScope.structuralExcluded || 0),
+      klineStructuralExclusionSamples: Array.isArray(marketKlineScope.structuralExclusionSamples)
+        ? marketKlineScope.structuralExclusionSamples : [],
       klineLiveFailed: Number(marketKlineScope.fail || 0),
       klineCacheTradingDates: { ...(marketKlineScope.cacheTradingDates || {}) },
       klineCacheMaxAgeMinutes: Array.isArray(marketKlineScope.cacheAgeMinutes) && marketKlineScope.cacheAgeMinutes.length
@@ -79808,6 +79965,13 @@ async function hotStocksPayload(options = {}) {
           sameDayCache: Number(marketKlineScope.sameDayCache || 0),
           staleCacheRejected: Number(marketKlineScope.staleCacheRejected || 0),
           unavailable: Number(marketKlineScope.unavailable || 0),
+          unavailableSamples: Array.isArray(marketKlineScope.unavailableSamples)
+            ? marketKlineScope.unavailableSamples.slice(0, 12) : [],
+          criticalUnavailable: Number(marketKlineScope.criticalUnavailable || 0),
+          structuralExcluded: Number(marketKlineScope.structuralExcluded || 0),
+          structuralExclusionSamples: Array.isArray(marketKlineScope.structuralExclusionSamples)
+            ? marketKlineScope.structuralExclusionSamples.slice(0, 12)
+            : [],
           failed: Number(marketKlineScope.fail || 0),
           totalRequested: Number(klineStats.requested || 0),
           totalUnavailable: Number(klineStats.unavailable || 0),
@@ -79821,6 +79985,18 @@ async function hotStocksPayload(options = {}) {
             sameDayCacheCount: Number(marketKlineScope.sameDayCache || 0),
             staleCacheRejectedCount: Number(marketKlineScope.staleCacheRejected || 0),
             unavailableCount: Number(marketKlineScope.unavailable || 0),
+            unavailableSamples: Array.isArray(marketKlineScope.unavailableSamples)
+              ? marketKlineScope.unavailableSamples.slice(0, 12) : [],
+            criticalUnavailableCount: Number(marketKlineScope.criticalUnavailable || 0),
+            coverageRatio: marketKlineScope.requested > 0
+              ? Math.round(((Number(marketKlineScope.liveAccepted || 0) + Number(marketKlineScope.sameDayCache || 0))
+                / Number(marketKlineScope.requested)) * 10000) / 10000 : 0,
+            boundedCoverageAccepted: Boolean(fetchStatus && fetchStatus.kline
+              && fetchStatus.kline.boundedCoverageAccepted === true),
+            structuralExcludedCount: Number(marketKlineScope.structuralExcluded || 0),
+            structuralExclusionSamples: Array.isArray(marketKlineScope.structuralExclusionSamples)
+              ? marketKlineScope.structuralExclusionSamples.slice(0, 12)
+              : [],
             liveFailureCount: Number(marketKlineScope.fail || 0),
             profileFailureCount: Number(marketKlineScope.profileFailures || 0),
             eligibleForClosingDecision: Boolean(fetchStatus && fetchStatus.kline
@@ -79834,6 +80010,7 @@ async function hotStocksPayload(options = {}) {
             sameDayCache: Number(klineStats.sameDayCache || 0),
             staleCacheRejected: Number(klineStats.staleCacheRejected || 0),
             unavailable: Number(klineStats.unavailable || 0),
+            structuralExcluded: Number(klineStats.structuralExcluded || 0),
             profileFailures: Number(klineStats.profileFailures || 0),
           },
           liveAttempts: {
@@ -80390,6 +80567,30 @@ async function hotStocksPayload(options = {}) {
       trigger: "successful-fetch",
       generationContext,
     });
+    if (cycleHistoryResult.required === true && cycleHistoryResult.ok !== true) {
+      markCycleHistoryUnavailable(payload, cycleHistoryResult);
+    }
+    let bootstrapArchiveResult = null;
+    if (formalArchiveResult.ok !== true
+      && formalArchiveResult.reason === "canonical-decision-receipt-unavailable") {
+      const bootstrapEvidence = strictExactClosingEvidence(payload, generationContext.tradingDate);
+      if (bootstrapEvidence.ok) {
+        bootstrapArchiveResult = autoArchiveMarketSnapshot(payload, {
+          trigger: "bootstrap-observation",
+          mode: "bootstrap_observation",
+          generationContext,
+          requireCanonicalDecisionReceipt: false,
+          settlePreviousDecision: false,
+        });
+      } else {
+        bootstrapArchiveResult = {
+          ok: false,
+          skipped: true,
+          reason: "bootstrap-market-evidence-unavailable",
+          blockers: bootstrapEvidence.reasons.slice(),
+        };
+      }
+    }
     payload.persistenceAudit = {
       version: 1,
       tradingDate: generationContext.tradingDate,
@@ -80408,10 +80609,15 @@ async function hotStocksPayload(options = {}) {
         reason: formalArchiveResult.reason || null,
         receiptStatus: formalArchiveResult.receiptStatus || null,
       },
+      bootstrapObservationHistory: bootstrapArchiveResult ? {
+        ok: bootstrapArchiveResult.ok === true,
+        skipped: bootstrapArchiveResult.skipped === true,
+        reason: bootstrapArchiveResult.reason || null,
+        receiptStatus: bootstrapArchiveResult.receiptStatus || null,
+        observationOnly: true,
+        executionAuthority: false,
+      } : null,
     };
-    if (cycleHistoryResult.required === true && cycleHistoryResult.ok !== true) {
-      markCycleHistoryUnavailable(payload, cycleHistoryResult);
-    }
 
 
 
@@ -83216,6 +83422,70 @@ async function handleApi(request, response, pathname) {
     return;
   }
 
+  if (pathname === "/api/data-providers/configuration") {
+    if (request.method === "GET") {
+      sendJson(response, 200, { ok: true, configuration: publicProviderConfiguration(runtimeRoot) });
+      return;
+    }
+    if (request.method !== "POST") {
+      sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
+      return;
+    }
+    if (String(request.headers["x-a-share-local-intent"] || "") !== "data-management-v1") {
+      sendJson(response, 403, { ok: false, error: "缺少本机数据管理确认标识" });
+      return;
+    }
+    try {
+      const body = await readJsonBody(request);
+      const configuration = writeProviderConfiguration(runtimeRoot, body);
+      reloadMarketDataProviderRegistry();
+      sendJson(response, 200, {
+        ok: true,
+        configuration,
+        dataProviders: dataProviderStatus(),
+        note: "配置已保存并重载；数据源只能提供证据，不能修改冻结决策引擎。",
+      });
+    } catch (error) {
+      sendJson(response, 400, {
+        ok: false,
+        error: String(error && error.message || error),
+        code: error && error.code || "provider_configuration_failed",
+        reasons: Array.isArray(error && error.reasons) ? error.reasons : [],
+      });
+    }
+    return;
+  }
+
+  if (pathname === "/api/history-bootstrap/status") {
+    if (request.method !== "GET") {
+      sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
+      return;
+    }
+    sendJson(response, 200, { ok: true, history: historyBootstrapStatus(runtimeRoot) });
+    return;
+  }
+
+  if (pathname === "/api/history-bootstrap/import") {
+    if (request.method !== "POST") {
+      sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
+      return;
+    }
+    if (String(request.headers["x-a-share-local-intent"] || "") !== "data-management-v1") {
+      sendJson(response, 403, { ok: false, error: "缺少本机数据管理确认标识" });
+      return;
+    }
+    try {
+      const result = importHistoryBootstrap(runtimeRoot);
+      sendJson(response, result.ok ? 200 : 422, {
+        ok: result.ok,
+        historyImport: result,
+      });
+    } catch (error) {
+      sendJson(response, 500, { ok: false, error: String(error && error.message || error) });
+    }
+    return;
+  }
+
   if (pathname === "/api/hot-stocks/status") {
     if (request.method !== "GET") {
       sendJson(response, 405, { ok: false, error: "Method Not Allowed" });
@@ -85500,12 +85770,14 @@ module.exports = {
     getMarketDataProviderRegistry,
     projectDataBundleMetadata,
     registerMarketDataProvider,
+    reloadMarketDataProviderRegistry,
     requiredProviderCapability,
     resetMarketDataProviderRegistryForTests,
   },
   klineQualityInternals: {
     createKlineSourceStats,
     summarizeKlineProfileScope,
+    detectKlineStructuralExclusion,
     klineCircuitShouldAttempt,
     recordKlineSourceFailure,
     recordKlineSourceSuccess,

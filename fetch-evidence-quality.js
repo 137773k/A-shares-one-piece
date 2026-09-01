@@ -44,6 +44,13 @@ function klineStatusFrom(payload) {
       marketScope.unavailableCount ?? marketScope.unavailable
       ?? item.unavailableCount ?? diagnostics.unavailable,
     ),
+    requestedCount: finite(marketScope.requestedCount ?? item.requestedCount ?? diagnostics.requested),
+    coverageRatio: finite(marketScope.coverageRatio ?? item.coverageRatio),
+    criticalUnavailableCount: finite(
+      marketScope.criticalUnavailableCount ?? item.criticalUnavailableCount ?? diagnostics.criticalUnavailable,
+    ),
+    boundedCoverageAccepted: marketScope.boundedCoverageAccepted === true
+      || item.boundedCoverageAccepted === true,
     sameDayCacheCount: finite(
       marketScope.sameDayCacheCount ?? marketScope.sameDayCache
       ?? item.sameDayCacheCount ?? diagnostics.sameDayCache,
@@ -54,10 +61,12 @@ function klineStatusFrom(payload) {
   };
 }
 
-function resolveFetchEvidenceQuality(payload, expectedTradingDateValue = null) {
+function resolveFetchEvidenceQuality(payload, expectedTradingDateValue = null, options = {}) {
   const fetchStatus = isObject(payload && payload.fetchStatus) ? payload.fetchStatus : {};
   const sourceLevel = String(fetchStatus.level || "").trim().toLowerCase();
-  const evidenceStatus = String(fetchStatus.evidenceStatus || "").trim().toLowerCase();
+  const evidenceStatus = String(options.marketOnly === true
+    ? fetchStatus.marketEvidenceStatus || fetchStatus.evidenceStatus || ""
+    : fetchStatus.evidenceStatus || "").trim().toLowerCase();
   const expectedTradingDate = normalizeTradingDate(expectedTradingDateValue);
   const kline = klineStatusFrom(payload);
   const explicitContract = Boolean(kline.statusKey);
@@ -76,25 +85,36 @@ function resolveFetchEvidenceQuality(payload, expectedTradingDateValue = null) {
     && evidenceStatus === "complete"
     && kline.unavailableCount === 0
     && dateAligned;
+  const explicitBoundedCoverage = ["live_bounded_coverage", "degraded_bounded_coverage"].includes(kline.statusKey)
+    && kline.eligible
+    && kline.boundedCoverageAccepted === true
+    && evidenceStatus === "complete"
+    && kline.requestedCount >= 100
+    && kline.unavailableCount === 1
+    && kline.criticalUnavailableCount === 0
+    && kline.coverageRatio >= 0.99
+    && dateAligned;
   const legacyOk = !explicitContract && sourceLevel === "ok";
-  const closingEvidenceUsable = legacyOk || explicitLiveComplete || exactSameDayDegraded;
+  const closingEvidenceUsable = legacyOk || explicitLiveComplete || exactSameDayDegraded || explicitBoundedCoverage;
   const reasons = [];
   if (!closingEvidenceUsable) {
     if (!sourceLevel) reasons.push("fetch_level_missing");
     else if (sourceLevel !== "ok" && evidenceStatus !== "complete") reasons.push("fetch_evidence_incomplete");
-    if (explicitContract && !["live_complete", "degraded_same_day_cache"].includes(kline.statusKey)) {
+    if (explicitContract && !["live_complete", "degraded_same_day_cache", "live_bounded_coverage", "degraded_bounded_coverage"].includes(kline.statusKey)) {
       reasons.push("kline_source_unusable");
     }
-    if (kline.unavailableCount !== null && kline.unavailableCount > 0) reasons.push("kline_coverage_incomplete");
+    if (kline.unavailableCount !== null && kline.unavailableCount > 0 && !explicitBoundedCoverage) reasons.push("kline_coverage_incomplete");
     if (!dateAligned) reasons.push("kline_trading_date_mismatch");
   }
   return {
     sourceLevel: sourceLevel || null,
     evidenceStatus: evidenceStatus || (legacyOk ? "legacy_complete" : null),
     klineStatusKey: kline.statusKey || null,
-    exactDateComplete: dateAligned && (explicitLiveComplete || exactSameDayDegraded),
+    exactDateComplete: dateAligned && (explicitLiveComplete || exactSameDayDegraded || explicitBoundedCoverage),
     closingEvidenceUsable,
     degradedSameDayCache: exactSameDayDegraded,
+    boundedCoverageAccepted: explicitBoundedCoverage,
+    marketOnly: options.marketOnly === true,
     legacyAccepted: legacyOk,
     expectedTradingDate,
     reasons,

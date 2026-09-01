@@ -69,7 +69,12 @@ function copySeedData(sourceRoot, runtimeRoot) {
 
   const sourceData = path.join(sourceRoot, "data");
   const runtimeData = path.join(runtimeRoot, "data");
-  for (const directory of [runtimeData, path.join(runtimeData, "history"), path.join(runtimeData, "reports")]) {
+  for (const directory of [
+    runtimeData,
+    path.join(runtimeData, "history"),
+    path.join(runtimeData, "history-import"),
+    path.join(runtimeData, "reports"),
+  ]) {
     fs.mkdirSync(directory, { recursive: true });
   }
   fs.mkdirSync(path.join(runtimeData, "providers"), { recursive: true });
@@ -135,6 +140,10 @@ function installMenu(runtimeRoot) {
         {
           label: "打开数据源目录",
           click: () => shell.openPath(path.join(runtimeRoot, "data", "providers")),
+        },
+        {
+          label: "打开历史导入目录",
+          click: () => shell.openPath(path.join(runtimeRoot, "data", "history-import")),
         },
         { type: "separator" },
         { role: "quit", label: "退出" },

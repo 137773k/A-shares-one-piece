@@ -7,6 +7,7 @@ const PROVIDER_CONFIG_VERSION = 1;
 const PROVIDER_CONFIG_FILE = "provider-config.json";
 const PROVIDER_DIRECTORY = "providers";
 const SECRET_KEY_PATTERN = /token|secret|password|passwd|cookie|authorization|api.?key/i;
+const CREDENTIAL_ENV_PATTERN = /^[A-Z][A-Z0-9_]{2,63}$/;
 
 function isObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -27,7 +28,29 @@ function safeProviderModulePath(runtimeRoot, moduleName) {
   if (!/^[a-zA-Z0-9._-]+\.(?:js|cjs)$/.test(name)) return null;
   const directory = path.resolve(runtimeRoot, "data", PROVIDER_DIRECTORY);
   const resolved = path.resolve(directory, name);
-  return path.dirname(resolved) === directory ? resolved : null;
+  if (path.dirname(resolved) !== directory) return null;
+  if (fs.existsSync(resolved)) {
+    try {
+      const realDirectory = fs.realpathSync(directory);
+      const realResolved = fs.realpathSync(resolved);
+      if (path.dirname(realResolved) !== realDirectory) return null;
+    } catch {
+      return null;
+    }
+  }
+  return resolved;
+}
+
+function listProviderModules(runtimeRoot) {
+  const directory = path.resolve(runtimeRoot || process.cwd(), "data", PROVIDER_DIRECTORY);
+  try {
+    return fs.readdirSync(directory, { withFileTypes: true })
+      .filter((entry) => entry.isFile() && safeProviderModulePath(runtimeRoot, entry.name))
+      .map((entry) => entry.name)
+      .sort((left, right) => left.localeCompare(right));
+  } catch {
+    return [];
+  }
 }
 
 function readProviderConfiguration(runtimeRoot) {
@@ -58,6 +81,99 @@ function readProviderConfiguration(runtimeRoot) {
   }
 }
 
+function publicProviderConfiguration(runtimeRoot) {
+  const configuration = readProviderConfiguration(runtimeRoot);
+  const source = isObject(configuration.config) ? configuration.config : {};
+  return {
+    schemaVersion: PROVIDER_CONFIG_VERSION,
+    configured: configuration.configured === true,
+    mode: ['auto', 'custom_first'].includes(String(source.mode)) ? String(source.mode) : "auto",
+    providers: Array.isArray(source.providers) ? source.providers.map((entry) => ({
+      module: String(entry && entry.module || ""),
+      enabled: entry && entry.enabled === true,
+      priority: Number(entry && entry.priority || 100),
+      credentialEnv: Array.isArray(entry && entry.credentialEnv)
+        ? entry.credentialEnv.map((name) => String(name || "")).filter(Boolean)
+        : [],
+    })) : [],
+    availableModules: listProviderModules(runtimeRoot),
+    errors: [...configuration.errors],
+    configPath: `data/${PROVIDER_CONFIG_FILE}`,
+    providerDirectory: `data/${PROVIDER_DIRECTORY}`,
+    secretsStoredInConfig: false,
+  };
+}
+
+function normalizeProviderConfigurationInput(runtimeRoot, input) {
+  const source = isObject(input) ? input : {};
+  const errors = [];
+  const mode = ['auto', 'custom_first'].includes(String(source.mode)) ? String(source.mode) : "";
+  if (!mode) errors.push("provider_config_mode_invalid");
+  const rows = Array.isArray(source.providers) ? source.providers : [];
+  if (!Array.isArray(source.providers) || rows.length > 16) errors.push("provider_config_entries_invalid");
+  const providers = [];
+  rows.slice(0, 16).forEach((entry, index) => {
+    if (!isObject(entry)) {
+      errors.push(`provider_entry_invalid:${index}`);
+      return;
+    }
+    const module = String(entry.module || "").trim();
+    const moduleFile = safeProviderModulePath(runtimeRoot, module);
+    if (!moduleFile || !fs.existsSync(moduleFile) || !fs.statSync(moduleFile).isFile()) {
+      errors.push(`provider_module_missing:${module || index}`);
+      return;
+    }
+    const priority = Number(entry.priority);
+    if (!Number.isInteger(priority) || priority < -1000 || priority > 10000) {
+      errors.push(`provider_priority_invalid:${module}`);
+      return;
+    }
+    const credentialEnv = Array.isArray(entry.credentialEnv)
+      ? Array.from(new Set(entry.credentialEnv.map((name) => String(name || "").trim()).filter(Boolean)))
+      : [];
+    if (credentialEnv.some((name) => !CREDENTIAL_ENV_PATTERN.test(name))) {
+      errors.push(`provider_credential_env_invalid:${module}`);
+      return;
+    }
+    providers.push({ module, enabled: entry.enabled === true, priority, credentialEnv });
+  });
+  if (new Set(providers.map((entry) => entry.module)).size !== providers.length) {
+    errors.push("provider_module_duplicate");
+  }
+  return {
+    valid: errors.length === 0,
+    errors: Array.from(new Set(errors)),
+    config: { schemaVersion: PROVIDER_CONFIG_VERSION, mode: mode || "auto", providers },
+  };
+}
+
+function writeProviderConfiguration(runtimeRoot, input) {
+  const root = path.resolve(runtimeRoot || process.cwd());
+  if (configContainsSecretValue(input)) {
+    const error = new Error("配置中禁止保存Token、密码、Cookie或密钥值");
+    error.code = "provider_config_contains_secret_value";
+    throw error;
+  }
+  const normalized = normalizeProviderConfigurationInput(root, input);
+  if (!normalized.valid) {
+    const error = new Error(normalized.errors.join(","));
+    error.code = "provider_config_invalid";
+    error.reasons = normalized.errors;
+    throw error;
+  }
+  const directory = path.resolve(root, "data");
+  const configFile = path.resolve(directory, PROVIDER_CONFIG_FILE);
+  fs.mkdirSync(directory, { recursive: true });
+  const tempFile = path.resolve(directory, `.${PROVIDER_CONFIG_FILE}.${process.pid}.${Date.now()}.tmp`);
+  try {
+    fs.writeFileSync(tempFile, `${JSON.stringify(normalized.config, null, 2)}\n`, { encoding: "utf8", mode: 0o600, flag: "wx" });
+    fs.renameSync(tempFile, configFile);
+  } finally {
+    try { fs.rmSync(tempFile, { force: true }); } catch { /* best effort */ }
+  }
+  return publicProviderConfiguration(root);
+}
+
 function loadConfiguredProviders({ runtimeRoot, env = process.env } = {}) {
   const root = path.resolve(runtimeRoot || process.cwd());
   const configuration = readProviderConfiguration(root);
@@ -79,7 +195,7 @@ function loadConfiguredProviders({ runtimeRoot, env = process.env } = {}) {
       delete require.cache[require.resolve(moduleFile)];
       const exported = require(moduleFile);
       const credentialNames = Array.isArray(entry.credentialEnv)
-        ? entry.credentialEnv.map((name) => String(name || "").trim()).filter((name) => /^[A-Z][A-Z0-9_]{2,63}$/.test(name))
+        ? entry.credentialEnv.map((name) => String(name || "").trim()).filter((name) => CREDENTIAL_ENV_PATTERN.test(name))
         : [];
       const credentials = Object.fromEntries(credentialNames.map((name) => [name, String(env[name] || "")]));
       const provider = typeof exported.createProvider === "function"
@@ -111,8 +227,13 @@ module.exports = {
   PROVIDER_CONFIG_FILE,
   PROVIDER_CONFIG_VERSION,
   PROVIDER_DIRECTORY,
+  CREDENTIAL_ENV_PATTERN,
   configContainsSecretValue,
+  listProviderModules,
   loadConfiguredProviders,
+  normalizeProviderConfigurationInput,
+  publicProviderConfiguration,
   readProviderConfiguration,
   safeProviderModulePath,
+  writeProviderConfiguration,
 };
