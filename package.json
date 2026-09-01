@@ -1,0 +1,126 @@
+{
+  "name": "a-share-trading-model",
+  "version": "1.1.5",
+  "private": true,
+  "license": "MIT",
+  "author": "A股短线模型",
+  "description": "A股短线模型工作台：热榜抓取、选股分析与次日策略",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/137773k/A-shares-one-piece.git"
+  },
+  "main": "desktop-main.js",
+  "scripts": {
+    "test": "npm run test:decision-closed-loop",
+    "start": "node server.js",
+    "build": "node build-static.mjs",
+    "test:event": "node test-event-engine.js",
+    "test:jiuyan": "node test-jiuyan-timeline.js",
+    "test:calendar": "node test-market-calendar.js",
+    "test:hot-rank": "node --test test-hot-rank-source.js",
+    "test:factor-validity": "node --test test-factor-effectiveness-validation.js",
+    "test:archiver": "node test-archiver.js",
+    "test:decision-receipt": "node --test test-decision-receipt.js",
+    "test:decision-outcome": "node --test test-decision-outcome.js",
+    "test:decision-ledger": "node --test test-decision-ledger.js",
+    "test:decision-closed-loop": "node test-archiver.js && node --test test-decision-receipt.js test-decision-outcome.js test-decision-ledger.js test-decision-archive-integration.js test-backtest-contract.js test-minute-evidence-hierarchy.js test-jqdata-integration-guards.js test-sell-engine-v7.js test-v7-sell-decision-entry.js && node --test test-factor-effectiveness-validation.js",
+    "test:backtest-contract": "node --test test-backtest-contract.js",
+    "backtest:contract:verify": "node backtest/verify-contract.js",
+    "backtest:preflight": "node backtest/verify-contract.js --require-executable",
+    "test:quant-decision": "node --test test-index-cycle-regime.js test-market-cycle-engine.js test-index-structure-preservation.js test-decision-direct.js test-market-cycle-contract.js test-market-phase-detail.js test-tomorrow-decision-context.js test-market-cap-carrier.js test-limit-up-pullback-repair.js test-execution-replay.js test-decision-receipt.js test-decision-outcome.js test-decision-ledger.js test-minute-evidence-hierarchy.js test-jqdata-integration-guards.js test-sell-engine-v7.js test-v7-sell-decision-entry.js test-unified-quant-factors.js test-unified-stock-factor-engine.js test-unified-quant-ranking.js test-unified-decision-chain.js test-unified-decision-chain-frontend.js",
+    "test:sell-v7": "node --test test-minute-evidence-hierarchy.js test-jqdata-integration-guards.js test-sell-engine-v7.js test-v7-sell-decision-entry.js",
+    "sync:mobile": "node sync-mobile-runtime.mjs",
+    "test:release-parity": "node --test test-decision-chain-release-parity.js",
+    "validate:factors": "node run-factor-effectiveness-validation.js",
+    "prevalidate:factors": "node settle-decision-outcomes.js",
+    "validate:factors:refresh-outcomes": "node fetch-factor-validation-outcomes.js",
+    "postvalidate:factors:refresh-outcomes": "node settle-decision-outcomes.js",
+    "validate:minute-pilot": "node run-python-tool.js fetch_akshare_minute_outcomes.py",
+    "postvalidate:minute-pilot": "node settle-decision-outcomes.js",
+    "validate:minute-full": "node run-python-tool.js fetch_akshare_minute_outcomes.py --full",
+    "postvalidate:minute-full": "node settle-decision-outcomes.js",
+    "validate:minute-audit": "node run-python-tool.js fetch_akshare_minute_outcomes.py --audit-existing",
+    "postvalidate:minute-audit": "node settle-decision-outcomes.js",
+    "validate:minute-akshare-1m": "node run-python-tool.js fetch_akshare_1m_outcomes.py --requirements",
+    "test:minute-akshare-1m": "node run-python-tool.js -m unittest test_akshare_1m_outcomes.py",
+    "probe:jqdata": "node run-jqdata-tool.js probe_jqdata_access.py",
+    "validate:minute-jqdata": "node run-jqdata-tool.js fetch_jqdata_minute_outcomes.py --requirements",
+    "test:minute-jqdata": "node run-jqdata-tool.js -m unittest test_jqdata_minute_outcomes.py",
+    "audit:decision-receipts": "node audit-decision-receipts.js",
+    "settle:decision-outcomes": "node settle-decision-outcomes.js",
+    "test:minute-backfill": "node run-python-tool.js -m unittest test_akshare_minute_outcomes.py",
+    "dump": "node server.js --dump-data",
+    "desktop": "electron .",
+    "desktop:dir": "electron-builder --win --x64 --dir",
+    "desktop:dist": "electron-builder --win --x64"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "electron": "^37.2.3",
+    "electron-builder": "^26.0.12"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "build": {
+    "appId": "com.ashare.tradingmodel",
+    "productName": "A股短线模型",
+    "asar": false,
+    "npmRebuild": false,
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "*.js",
+      "quant-decision/**/*",
+      "backtest/**/*",
+      "*.html",
+      "*.css",
+      "package.json",
+      "LICENSE",
+      "README.md",
+      "!test-*.js",
+      "!build-kline-seed.js",
+      "!api_debug.json",
+      "!diagnostic-*.log",
+      "!server*.log",
+      "!.eastmoney-debug.json",
+      "!.eastmoney-center-list.html",
+      "!.eastmoney-hshq.js",
+      "!.eastmoney-index.js",
+      "!.stock_shichang.js",
+      "!docs/**/*",
+      "!expo-app/**/{*,.*}",
+      "expo-app/favicon.ico",
+      "expo-app/assets/icon.png"
+    ],
+    "win": {
+      "icon": "expo-app/assets/icon.png",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "artifactName": "${productName}-Setup-${version}-${arch}.${ext}",
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "A股短线模型",
+      "deleteAppDataOnUninstall": false
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}-${arch}.${ext}"
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "authority": "a_share_backtest_contract_registry_v1",
+  "appendOnly": true,
+  "entries": [
+    {
+      "contractVersion": "v1",
+      "contractPath": "backtest/contracts/strategy-v1.json",
+      "contractCommit": "8bdf98160793a4d94e6c5a5dd77994f774cee671",
+      "contractHash": "56a307218a79ed167882725cd3c207674959387158f6d64c99e00e521d235288",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v2",
+      "contractPath": "backtest/contracts/strategy-v2.json",
+      "contractCommit": "1883c482a147dc6aa8165603c0ad77650c735bee",
+      "contractHash": "cc9a9f7b2ccb7bb3ae7beb2b64fb2615bea536d16e22a7b91c7e5a3a926d485b",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v3",
+      "contractPath": "backtest/contracts/strategy-v3.json",
+      "contractCommit": "2e47e96559a3a66fa3c02fb565a25457e51237d4",
+      "contractHash": "b58afd6ac240f2be85109bd76fc6e59f0388b352433eda8aa8c74d6ff0e94847",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v4",
+      "contractPath": "backtest/contracts/strategy-v4.json",
+      "contractCommit": "fbcc4e222c2f8196723897ad746837d2740e06c3",
+      "contractHash": "760800d3128a06f8e3696ba79ea17a6e0931bb12212369b031c2c02f6be326aa",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v5",
+      "contractPath": "backtest/contracts/strategy-v5.json",
+      "contractCommit": "23146fbd8f477be8717ebd4f4224d35ed525d1f4",
+      "contractHash": "002a0ecd49bf697cccb6fbd5e027bcb1810764f2d1db760a186760664ee8786c",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v6",
+      "contractPath": "backtest/contracts/strategy-v6.json",
+      "contractCommit": "9f5c9a20cb26f645daf38b7021a8f208a8cab421",
+      "contractHash": "a2690ddf370f5deae8757ed389275b023d7028ebc6c38664e3d7cc029f68d735",
+      "strategyHash": "8e539cce019b664388cb0f90ef57e293dc3b7806255683fa827b46e2b9d9d4b0",
+      "sourceCommit": "d5b81fa2ab7d10430d3be5b89ca9d689b4b67d6a",
+      "status": "approved"
+    },
+    {
+      "contractVersion": "v7",
+      "contractPath": "backtest/contracts/strategy-v7.json",
+      "contractCommit": "328b11be252b276880ad2270094ccaeb3ecddb6f",
+      "contractHash": "f557ccf346a83efb654be39ee4dd39b295b8134eab1d766e3cf4a3928dee0fcd",
+      "strategyHash": "fe142c1807039b3ff29fa92be3a87353e0df1c90c4b493bd51936d338a6995db",
+      "sourceCommit": "da6d5e9ecfada9f253323ba4f4436e0bbfa44d5a",
+      "status": "approved"
+    }
+  ],
+  "rule": "同一contractVersion只允许登记一次；任何规则变化必须创建新版本和新Git提交"
+}

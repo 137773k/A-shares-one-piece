@@ -1,0 +1,41 @@
+node_modules/
+__pycache__/
+*.pyc
+.cache/
+data/
+*.log
+.*.err
+.*.out
+.*.run.log
+.jiuyan-timeline-cache.json
+.market-calendar-cache.json
+.hot-rank-cache.json
+.playwright-cli/
+output/
+release/
+api_debug.json
+output-model-smoke.json
+expo-app/assets/icon-source-*.jpg
+
+# Local market snapshots and generated static data
+.hot-stocks-cache.json
+.eastmoney-market.json
+.cycle-state.json
+dist/
+.expo/
+expo-app/*
+!expo-app/assets/
+expo-app/assets/*
+!expo-app/assets/icon.png
+!expo-app/favicon.ico
+
+# Local provider captures and debugging artifacts
+.eastmoney-center-list.html
+.eastmoney-debug.json
+.eastmoney-hshq.js
+.eastmoney-index.js
+.stock_shichang.js
+
+# Local AI task scratch files
+.claude_task*.txt
+.codex*task*.txt

@@ -1,0 +1,399 @@
+{
+  "contractVersion": 1,
+  "fixtureId": "post-close-mainline-core-normal-divergence-reflow-20260810",
+  "fixtureKind": "post_close_opportunity_golden",
+  "description": "盘后识别主线容量核心在分歧后可能回流的去个人化黄金样本。事实、用户口述、模型期望和次日结果严格分层。",
+  "privacy": {
+    "deidentified": true,
+    "containsAccountIdentity": false,
+    "containsAccountSize": false,
+    "containsExactUserOrders": false
+  },
+  "timeline": {
+    "decisionTradingDate": "2026-08-10",
+    "decisionAsOf": "2026-08-10T15:26:31.564Z",
+    "outcomeTradingDate": "2026-08-11",
+    "outcomeAsOf": "2026-08-11T15:58:40.145Z"
+  },
+  "sourceRefs": [
+    {
+      "id": "archive_20260810",
+      "kind": "closing_archive",
+      "path": "data/history/2026-08-10.json",
+      "assertionType": "confirmed_fact"
+    },
+    {
+      "id": "archive_20260811",
+      "kind": "closing_archive",
+      "path": "data/history/2026-08-11.json",
+      "assertionType": "confirmed_fact"
+    },
+    {
+      "id": "review_report",
+      "kind": "deidentified_user_report",
+      "path": null,
+      "assertionType": "user_reported"
+    }
+  ],
+  "decisionInput": {
+    "asOf": "2026-08-10T15:26:31.564Z",
+    "market": {
+      "archiveCycle": "修复",
+      "structuralCycle": "修复",
+      "userHypothesis": {
+        "smallCycle": "主升",
+        "confirmedByArchive": null,
+        "assertionType": "user_reported"
+      },
+      "snapshot": {
+        "upCount": 3924,
+        "downCount": 1266,
+        "flatCount": 93,
+        "breadth": 0.7560693641618497,
+        "totalAmountYi": 25231.03,
+        "avgIndexChangePct": -0.01,
+        "limitUpCount": 99,
+        "limitDownCount": 5,
+        "profitEffectScore": 83.6,
+        "lossEffectScore": 29.3
+      },
+      "archivedExecutionPermission": {
+        "status": "blocked",
+        "allowImmediateEntry": false,
+        "canActivate": false
+      }
+    },
+    "stylePreference": {
+      "marketPreference": "轮动回流",
+      "subjectEffectType": "轮动回流",
+      "subjectRole": "中军",
+      "ticketType": "容量票",
+      "dualPopularityRank": {
+        "eastRank": 2,
+        "thsRank": 1,
+        "combinedRank": 1,
+        "inBothSources": true
+      },
+      "initiative": {
+        "score": 66,
+        "proactive": true,
+        "capacity": true,
+        "dataQuality": "收盘代理"
+      }
+    },
+    "themeOwnership": {
+      "decisionTimePrimary": {
+        "name": "共封装光学(CPO)",
+        "family": "AI算力",
+        "assertionType": "confirmed_fact"
+      },
+      "decisionTimeRelated": [
+        {
+          "name": "超级电容",
+          "assertionType": "confirmed_fact"
+        }
+      ],
+      "userReportedRelated": [
+        {
+          "name": "MLCC",
+          "confirmedByArchive": null,
+          "assertionType": "user_reported"
+        }
+      ],
+      "themeState": {
+        "rank": 1,
+        "isMainLine": true,
+        "resonance": false,
+        "sustained": false,
+        "score": 347,
+        "hotMemberCount": 23,
+        "limitCount": 3,
+        "stockCount": 6
+      }
+    },
+    "subject": {
+      "code": "000636",
+      "name": "风华高科",
+      "board": "主板",
+      "ohlc": {
+        "previousClose": 58.29,
+        "open": 57.77,
+        "high": 63.96,
+        "low": 54.33,
+        "close": 61.7,
+        "changePct": 5.85
+      },
+      "liquidity": {
+        "amountYi": 125.7,
+        "turnoverRatePct": 18.6,
+        "volumeRatio": 1.05,
+        "mainInflowYi": 3.3
+      },
+      "role": {
+        "level": "L3",
+        "levelLabel": "主线进攻核心",
+        "identity": "主动型容量龙头",
+        "anchorType": "主动容量核心",
+        "tradeState": "等回踩"
+      },
+      "location": {
+        "pctBelow120DayHigh": 26.5,
+        "pctAboveRecentWeightedCost": 14.3,
+        "pctAboveMa5": 6.2,
+        "pctAboveMa20": 23.4,
+        "positionLabel": "短线偏离成本区",
+        "overextended": true,
+        "archiveLowStartLabel": "低位/启动段",
+        "relativeLowConclusion": "frame_dependent",
+        "relativeLowOnlyVersusPriorPeak": true,
+        "relativeLowVersusShortTermCost": false
+      },
+      "boardHistory": {
+        "boards": 0,
+        "closedAtLimit": false,
+        "firstBoardClassification": false
+      }
+    }
+  },
+  "expectedOutput": {
+    "classification": {
+      "setupType": "mainline_core_normal_divergence_reflow",
+      "thesisStatus": "partially_supported",
+      "notFirstBoardSetup": true,
+      "plainLanguage": "市场有赚钱效应，资金偏向主线里的高人气容量核心；可以等分歧后的主动回流，但不能把修复行情直接当成已经确认的主升，也不能追高。"
+    },
+    "cyclePermission": {
+      "status": "conditional",
+      "allowSetupPlanning": true,
+      "allowUnconditionalEntry": false,
+      "allowChase": false,
+      "mainRiseConfirmed": null,
+      "maxPositionFraction": null,
+      "reasonCodes": [
+        "repair_cycle_not_confirmed_main_rise",
+        "strong_profit_effect_supports_observation",
+        "archive_execution_gate_was_blocked",
+        "entry_requires_next_session_confirmation"
+      ]
+    },
+    "themeContract": {
+      "preserveDecisionTimePrimary": true,
+      "primaryName": "共封装光学(CPO)",
+      "primaryFamily": "AI算力",
+      "relatedNames": [
+        "超级电容"
+      ],
+      "mlccVerified": null,
+      "mustNotOverwritePrimaryWithOutcomeTheme": true
+    },
+    "fundPreference": {
+      "path": "rotation_reflow",
+      "carrier": "proactive_popular_capacity_core",
+      "assertionType": "derived_from_confirmed_facts"
+    },
+    "nextSessionRules": {
+      "triggerMode": "all_required",
+      "triggers": [
+        {
+          "id": "early_divergence_then_recovery",
+          "field": "nextSessionOutcome.subject.intraday.openChangePct",
+          "operator": "lt",
+          "value": 0,
+          "confirmationField": "nextSessionOutcome.subject.intraday.firstRedTime",
+          "confirmationOperator": "not_null"
+        },
+        {
+          "id": "core_shows_active_attack",
+          "field": "nextSessionOutcome.subject.intraday.firstAttackTime",
+          "operator": "not_null",
+          "value": null,
+          "confirmationField": "nextSessionOutcome.subject.initiative.proactive",
+          "confirmationOperator": "eq_true"
+        },
+        {
+          "id": "theme_reflow_has_breadth",
+          "field": "nextSessionOutcome.theme.resonance",
+          "operator": "eq_true",
+          "value": true,
+          "confirmationField": "nextSessionOutcome.theme.sustained",
+          "confirmationOperator": "eq_true"
+        }
+      ],
+      "cancelMode": "any_required",
+      "cancels": [
+        {
+          "id": "theme_loses_resonance",
+          "field": "nextSessionOutcome.theme.resonance",
+          "operator": "eq_false",
+          "value": false,
+          "deadline": null
+        },
+        {
+          "id": "core_structure_breaks",
+          "field": "nextSessionOutcome.subject.structure.breakdown",
+          "operator": "eq_true",
+          "value": true,
+          "deadline": null
+        },
+        {
+          "id": "market_negative_feedback_expands",
+          "field": "nextSessionOutcome.market.lossControlled",
+          "operator": "eq_false",
+          "value": false,
+          "deadline": null
+        }
+      ]
+    },
+    "riskActionScenario": {
+      "when": "limit_touch_after_reflow",
+      "action": "trim",
+      "fractionOfPreActionPosition": 0.3333333333333333,
+      "assessment": "reasonable_de_risking_not_proven_optimal",
+      "doesNotAuthorizeAdding": true,
+      "exactFillPrice": null,
+      "exactFillTime": null,
+      "remainingPositionFraction": null
+    }
+  },
+  "nextSessionOutcome": {
+    "asOf": "2026-08-11T15:58:40.145Z",
+    "market": {
+      "archiveCycle": "修复",
+      "dailyState": "健康分化·兑现",
+      "upCount": 1576,
+      "downCount": 3549,
+      "flatCount": 158,
+      "breadth": 0.3075121951219512,
+      "totalAmountYi": 23209.86,
+      "avgIndexChangePct": -0.29,
+      "limitUpCount": 58,
+      "limitDownCount": 1,
+      "profitEffectScore": 53,
+      "lossEffectScore": 25.4,
+      "profitPresent": true,
+      "lossControlled": true
+    },
+    "theme": {
+      "outcomeTimePrimary": "PCB概念",
+      "outcomeTimeFamily": "PCB概念",
+      "linkedDecisionTheme": "共封装光学(CPO)",
+      "rank": 1,
+      "isMainLine": true,
+      "resonance": true,
+      "sustained": true,
+      "score": 602,
+      "hotMemberCount": 39,
+      "limitCount": 11,
+      "stockCount": 8
+    },
+    "subject": {
+      "code": "000636",
+      "name": "风华高科",
+      "ohlc": {
+        "previousClose": 61.7,
+        "open": 60.88,
+        "high": 67.87,
+        "low": 60.88,
+        "close": 65.85,
+        "changePct": 6.73
+      },
+      "liquidity": {
+        "amountYi": 172.9,
+        "klineAmountYi": 172.93,
+        "turnoverRatePct": 22.74,
+        "volumeRatio": 1.25,
+        "mainInflowYi": 7.4
+      },
+      "popularity": {
+        "eastRank": 2,
+        "thsRank": 1,
+        "combinedRank": 1,
+        "inBothSources": true
+      },
+      "role": {
+        "level": "L4",
+        "levelLabel": "主线主动龙头",
+        "identity": "主动型容量龙头",
+        "anchorType": "主动容量核心"
+      },
+      "initiative": {
+        "score": 97,
+        "proactive": true,
+        "capacity": true,
+        "followerCount": 3,
+        "breadthLift": 3,
+        "dataQuality": "分时验证"
+      },
+      "structure": {
+        "grade": "B",
+        "frameworkIntact": true,
+        "breakdown": false,
+        "overextended": true,
+        "trendHealthy": true,
+        "pctBelow120DayHigh": 21.5,
+        "pctAboveRecentWeightedCost": 17,
+        "pctAboveMa5": 9.1,
+        "pctAboveMa20": 30.8
+      },
+      "intraday": {
+        "openChangePct": -1.3,
+        "currentChangePct": 6.7,
+        "maxChangePct": 10,
+        "minChangePct": -1.3,
+        "firstRedTime": "09:31",
+        "firstAttackTime": "09:32",
+        "firstStrongTime": "09:43",
+        "limitTouched": true,
+        "firstLimitTime": "10:44",
+        "limitTouchCount": 2,
+        "limitOpenCount": 2,
+        "lastResealTime": "10:50",
+        "resealedAfterOpen": false,
+        "closedAtLimit": false,
+        "finalSealMinutes": 0,
+        "postTouchMaxPullbackPct": 5.9
+      },
+      "boardHistory": {
+        "boards": 0,
+        "closedAtLimit": false,
+        "firstBoardClassification": false
+      }
+    },
+    "normalDivergenceAssessment": {
+      "status": "supported_with_limits",
+      "broadMarketWasWeak": true,
+      "themeReflowConfirmed": true,
+      "subjectActiveRecoveryConfirmed": true,
+      "subjectHeldLimitAtClose": false,
+      "marketWideSafetyConfirmed": false,
+      "plainLanguage": "大多数股票下跌，但主线题材仍有扩散，核心股从早盘分歧转为主动拉升并触及涨停；这支持正常分歧后的回流，不代表全市场没有风险。"
+    }
+  },
+  "deidentifiedReviewScenario": {
+    "source": "review_report",
+    "entryReason": "主线容量核心在正常分歧后可能回流",
+    "entryPrice": null,
+    "entryTime": null,
+    "openingPositionFraction": null,
+    "precommittedStop": null,
+    "reportedExitAction": "sold_one_third_on_limit",
+    "reportedExitFraction": 0.3333333333333333,
+    "reportedExitPrice": null,
+    "reportedExitTime": null,
+    "remainingPositionFraction": null,
+    "feesAndSlippage": null
+  },
+  "unknowns": {
+    "actualEntryPrice": null,
+    "actualEntryTime": null,
+    "actualOpeningPositionFraction": null,
+    "actualExitPrice": null,
+    "actualExitTime": null,
+    "actualRemainingPositionFraction": null,
+    "accountExposureBeforeTrade": null,
+    "precommittedInvalidation": null,
+    "feesAndSlippage": null,
+    "mlccMembershipVerifiedByArchive": null,
+    "smallCycleMainRiseConfirmedByArchive": null
+  }
+}

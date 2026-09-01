@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>A股短线模型工作台</title>
+   <link rel="stylesheet" href="./styles.css?v=20260830-emotion-anchor-readable-v1" />
+   <link rel="stylesheet" href="./ui-refresh.css?v=20260830-focus-watchlist-v1" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">A</span>
+          <div>
+            <strong>A股短线模型</strong>
+            <small>复盘 · 选股 · 次日策略</small>
+          </div>
+        </div>
+
+        <div class="workflow-nav">
+          <nav class="nav-stack workflow-stage-list" aria-label="A股决策栏目">
+            <details class="workflow-stage workflow-layer" data-workflow-layer="observation">
+              <summary class="workflow-stage-toggle" aria-controls="workflow-layer-observation-items" aria-expanded="false">
+                <span class="workflow-stage-index">OBS</span>
+                <span class="workflow-stage-copy"><strong>观察层</strong><small>只描述状态 · 不构成操作指令</small></span>
+                <span class="workflow-stage-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div id="workflow-layer-observation-items" class="workflow-stage-items">
+                <p class="workflow-layer-note">观察结论不等于今天买入，也不等于明日参与。</p>
+                <a href="#dashboard" class="nav-item" data-view="dashboard" data-label="基础概括"><span class="nav-index">01</span><span>基础概括</span></a>
+                <a href="#index-opportunity" class="nav-item" data-view="index-opportunity" data-label="指数机会"><span class="nav-index">02</span><span>指数机会</span></a>
+                <a href="#theme-library" class="nav-item" data-view="theme-library" data-label="题材筛选"><span class="nav-index">03</span><span>题材筛选</span></a>
+                <a href="#trading-preference" class="nav-item" data-view="trading-preference" data-label="炒作偏好"><span class="nav-index">04</span><span>炒作偏好</span></a>
+                <a href="#emotion-stage" class="nav-item" data-view="emotion-stage" data-label="情绪阶段"><span class="nav-index">05</span><span>情绪阶段</span></a>
+                <a href="#auto-picker" class="nav-item" data-view="auto-picker" data-label="核心观察"><span class="nav-index">06</span><span>核心观察</span></a>
+                <a href="#survivors" class="nav-item" data-view="survivors" data-label="活口观察"><span class="nav-index">07</span><span>活口观察</span></a>
+                <a href="#review-conclusion" class="nav-item" data-view="review-conclusion" data-label="市场复盘"><span class="nav-index">08</span><span>市场复盘</span></a>
+                <a href="#journal" class="nav-item" data-view="journal" data-label="交易复盘"><span class="nav-index">09</span><span>交易复盘</span></a>
+              </div>
+            </details>
+
+            <details class="workflow-stage workflow-layer" data-workflow-layer="decision" open>
+              <summary class="workflow-stage-toggle" aria-controls="workflow-layer-decision-items" aria-expanded="true">
+                <span class="workflow-stage-index">ACT</span>
+                <span class="workflow-stage-copy"><strong>决策层</strong><small>门槛 → 节点 → 动作 → 退出</small></span>
+                <span class="workflow-stage-chevron" aria-hidden="true">⌄</span>
+              </summary>
+              <div id="workflow-layer-decision-items" class="workflow-stage-items">
+                <p class="workflow-layer-note is-decision">只有门槛、节点和触发条件同时满足，才形成执行动作。</p>
+                <a href="#decision" class="nav-item active" data-view="decision" data-label="明日决策"><span class="nav-index">01</span><span>明日决策</span></a>
+                <a href="#preplan" class="nav-item" data-view="preplan" data-label="重点观察"><span class="nav-index">02</span><span>重点观察</span></a>
+                <a href="#sell-advisor" class="nav-item" data-view="sell-advisor" data-label="持仓与卖出方案"><span class="nav-index">03</span><span>持仓与卖出方案</span></a>
+              </div>
+            </details>
+          </nav>
+        </div>
+
+      </aside>
+
+      <main class="main">
+        <header class="workspace-topbar">
+          <div class="workspace-title">
+            <span>盘后策略工作台</span>
+            <strong id="workspaceViewTitle">明日决策</strong>
+          </div>
+          <div class="workspace-context">
+            <span class="workspace-device"><i aria-hidden="true"></i>电脑网页端</span>
+            <span>结论优先 · 证据随后</span>
+          </div>
+        </header>
+        <div id="externalCoreAlert" class="external-core-alert" role="status" aria-live="polite" hidden></div>
+        <section id="decision" class="section" data-view="decision">
+          <div class="section-heading">
+            <p class="eyebrow">TOMORROW'S DECISION</p>
+            <h2>明日决策</h2>
+          </div>
+          <div class="decision-toolbar">
+            <button id="fetchHotStocksDecision" class="primary-btn" type="button" title="抓取本机最新行情并重新生成当日决策；旧快照在刷新完成前只保留展示">一键抓取并生成决策</button>
+            <button id="localVerifyHotStocksBtn" class="secondary-btn" type="button" title="使用本机网络独立抓取做交叉核验；核验结果不会覆盖云端正式决策">本机独立核验</button>
+            <button id="archiveBtn" class="secondary-btn" type="button" title="保存今日数据到历史快照">💾 盘后归档</button>
+            <button id="cloudHistorySyncBtn" class="secondary-btn" type="button" title="只读核对手机云端正式快照，并补齐本机缺失日期">☁ 云端补齐</button>
+            <span id="fetchStatusBadgeDecision" class="fetch-status-badge">等待抓取</span>
+            <span id="cloudCurrentSyncStatus" class="fetch-status-badge" aria-live="polite">正式决策待同步</span>
+            <span id="cloudHistorySyncStatus" class="fetch-status-badge" aria-live="polite">云端待核对</span>
+          </div>
+          <div id="decisionAuthorityLanes" class="decision-authority-lanes is-unified" data-active-authority="unknown" aria-label="当前有效决策">
+            <div id="decisionAuthorityCurrent" class="decision-authority-current" aria-live="polite">
+              <span>等待决策快照</span>
+              <strong>等待决策快照</strong>
+              <small>正在核对本机最新交易日数据</small>
+            </div>
+          </div>
+          <section id="decisionCausalChain" class="decision-causal-chain is-empty" aria-live="polite">
+            <div class="decision-causal-empty">
+              <span>今日结论</span>
+              <strong>等待市场快照，随后直接给出明日方向、具体票和执行条件</strong>
+            </div>
+          </section>
+        </section>
+
+        <section id="index-opportunity" class="section premarket-step-section" data-view="index-opportunity" data-premarket-step="indexOpportunity">
+          <div class="premarket-step-heading">
+            <div>
+              <p class="eyebrow">盘后复盘 · 1/6</p>
+              <h2>指数机会</h2>
+              <p>观察指数环境、风险容量与外围修正，作为决策层输入；这里不直接给出仓位或交易动作。</p>
+            </div>
+            <span id="premarketIndexStatus" class="premarket-step-status is-waiting">等待数据</span>
+          </div>
+          <div id="premarketIndexBody" class="premarket-step-body" aria-live="polite">
+            <div class="empty-state">等待最新市场快照。</div>
+          </div>
+        </section>
+
+        <section id="trading-preference" class="section premarket-step-section" data-view="trading-preference" data-premarket-step="tradingPreference">
+          <div class="premarket-step-heading">
+            <div>
+              <p class="eyebrow">盘后复盘 · 3/6</p>
+              <h2>炒作偏好</h2>
+              <p>用冻结样本的连续T+1赚钱与亏钱反馈识别持续风格；今日热度只作观察，单日变化不切换正式偏好。</p>
+            </div>
+            <span id="premarketPreferenceStatus" class="premarket-step-status is-waiting">等待数据</span>
+          </div>
+          <div id="premarketPreferenceBody" class="premarket-step-body" aria-live="polite">
+            <div class="empty-state">等待最新市场样本。</div>
+          </div>
+        </section>
+
+        <section id="emotion-stage" class="section premarket-step-section" data-view="emotion-stage" data-premarket-step="emotionStage">
+          <div class="premarket-step-heading">
+            <div>
+              <p class="eyebrow">盘后复盘 · 4/6</p>
+              <h2>情绪阶段</h2>
+              <p>观察重要股票是在延续、承接、分歧还是产生负反馈；这里只描述情绪状态，不给出追涨或低吸指令。</p>
+            </div>
+            <span id="premarketEmotionStatus" class="premarket-step-status is-waiting">等待数据</span>
+          </div>
+          <div id="premarketEmotionBody" class="premarket-step-body" aria-live="polite">
+            <div class="empty-state">等待情绪周期和核心票反馈。</div>
+          </div>
+        </section>
+
+        <section id="market-emotion" class="section" data-view="market-emotion">
+          <div class="section-heading market-emotion-heading">
+            <div>
+              <p class="eyebrow">MARKET EMOTION</p>
+              <h2>市场情绪 · 修复质量观察</h2>
+            </div>
+            <div class="market-emotion-toolbar">
+              <button id="marketEmotionRefreshBtn" class="primary-btn" type="button">重新抓取市场数据</button>
+              <span id="marketEmotionMeta" class="market-emotion-meta">等待抓取</span>
+            </div>
+          </div>
+
+          <div id="marketEmotionHero" class="market-emotion-hero is-empty">
+            <div class="market-light" aria-hidden="true"><span></span></div>
+            <div>
+              <p class="market-emotion-kicker">市场层前置条件</p>
+              <h3>等待最新市场快照</h3>
+              <p>抓取后判断指数修复、近期核心参与、量能与突破质量。</p>
+            </div>
+          </div>
+
+          <div class="panel market-review-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>今日复盘总结</h3>
+                <p>把今天发生了什么和明天怎么做压缩成一张执行卡。</p>
+              </div>
+              <span>随市场快照自动保存</span>
+            </div>
+            <div id="marketEmotionReview" class="market-review-body">
+              <p class="decision-note">等待抓取后生成。</p>
+            </div>
+          </div>
+
+          <div id="marketEmotionMetrics" class="market-emotion-metrics"></div>
+
+          <div class="panel market-emotion-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>情绪锚点与主动龙头</h3>
+                <p>锚点负责判断情绪是否转暖；只有主动进攻、核心地位和整体框架同时通过的股票，才进入交易载体。</p>
+              </div>
+              <span>自动更新，不写死股票</span>
+            </div>
+            <div id="marketEmotionGroups" class="market-emotion-groups">
+              <p class="decision-note">等待抓取后生成。</p>
+            </div>
+          </div>
+
+          <div class="panel market-emotion-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>明日怎么验证</h3>
+                <p>盘后先给基础预期，次日只按市场整体反馈升级或取消。</p>
+              </div>
+              <span class="market-emotion-observe-only">主动性＋核心地位＋结构共同控制交易资格</span>
+            </div>
+            <div id="marketEmotionValidation" class="market-emotion-validation"></div>
+          </div>
+        </section>
+
+        <section id="super-expectation" class="section super-expectation-section" data-view="super-expectation">
+          <div class="section-heading super-expectation-heading">
+            <div>
+              <p class="eyebrow">EXPECTATION GAP</p>
+              <h2>超预期 · 候选筛选与次日应对</h2>
+              <p>先把今日状态归入唯一一类，再分别验证弱转强或强转强；不是看到上涨就追。</p>
+            </div>
+            <div class="super-expectation-toolbar">
+              <button id="superExpectationRefreshBtn" class="primary-btn" type="button">重新抓取并验证</button>
+              <span id="superExpectationMeta">等待抓取</span>
+            </div>
+          </div>
+
+          <div id="superExpectationHero" class="super-expectation-hero is-empty">
+            <div class="super-expectation-hero-copy">
+              <span>核心前置门槛</span>
+              <h3>超预期不是形态筛选，而是预期差交易</h3>
+              <p>只有核心地位、清晰预期路径与板块回流基础同时成立，才进入明日观察名单。</p>
+            </div>
+            <div class="super-expectation-gates">
+              <span><b>01</b>核心身份</span>
+              <span><b>02</b>强弱性质</span>
+              <span><b>03</b>板块基础</span>
+              <span><b>04</b>次日确认</span>
+            </div>
+          </div>
+
+          <div id="superExpectationCounts" class="super-expectation-counts" aria-live="polite"></div>
+
+          <article class="panel super-expectation-stage is-candidate">
+            <div class="panel-title-row super-expectation-stage-head">
+              <div>
+                <span class="super-stage-index">第一步 · 盘后筛选</span>
+                <h3>明日可能超预期的核心</h3>
+                <p>盘后先归入五种互斥状态；只有强势基线或有效弱基线，才进入对应的次日路线。</p>
+              </div>
+              <span id="superExpectationCandidateMeta">等待盘后筛选</span>
+            </div>
+            <div id="superExpectationCandidates" class="super-expectation-list">
+              <div class="super-expectation-empty"><strong>尚未生成候选</strong><span>抓取后只展示通过核心门槛的标的。</span></div>
+            </div>
+            <div id="superExpectationRejected" class="super-expectation-rejected" hidden></div>
+          </article>
+
+          <article class="panel super-expectation-stage is-validation">
+            <div class="panel-title-row super-expectation-stage-head">
+              <div>
+                <span class="super-stage-index">第二步 · 次日验证</span>
+                <h3>实际超预期后怎么做</h3>
+                <p>拿昨天冻结的预期与今天真实走势比较，分别给持仓者和空仓者明确动作。</p>
+              </div>
+              <span id="superExpectationValidationMeta">等待次日行情</span>
+            </div>
+            <div id="superExpectationValidations" class="super-expectation-list">
+              <div class="super-expectation-empty"><strong>暂无待验证记录</strong><span>有昨日候选后，系统会在次日自动接续验证。</span></div>
+            </div>
+          </article>
+
+          <details class="panel super-expectation-rules">
+            <summary>查看五种互斥状态与两条次日路线</summary>
+            <div class="super-expectation-rule-grid">
+              <div><b>稳定强</b><span>全天强势且承接稳定，本身不弱，不冒充弱转强。</span></div>
+              <div><b>强势回封</b><span>盘中分歧后快速回封，仍是强势基线；主升环境可观察强转强。</span></div>
+              <div><b>有效弱基线</b><span>仅限紧邻上一交易日的烂板、炸板、断板或核心大阴分歧，可观察弱转强。</span></div>
+              <div><b>普通弱</b><span>弱但没有合格的负面预期差，或不是紧邻上一交易日，不生成跨日预案。</span></div>
+              <div><b>主动失败</b><span>个股独立走弱、承接坍缩、结构破坏或资金出逃，直接淘汰。</span></div>
+              <div><b>弱转强路线</b><span>只验证有效弱基线是否被竞价、承接、主动性和板块响应共同纠偏。</span></div>
+              <div><b>强转强路线</b><span>只验证强势基线是否明显超过正常强势预期，并继续主动带动板块。</span></div>
+            </div>
+            <p>统一失效：实际走势回到各自正常预期或更弱路径、板块核心不跟，或个股失去主动性；单看高开不构成确认。</p>
+          </details>
+        </section>
+
+        <section id="event-inference" class="section event-inference-section" data-view="event-inference">
+          <div class="section-heading event-inference-heading">
+            <div>
+              <p class="eyebrow">EVENT RADAR</p>
+              <h2>事件雷达 · 提前观察与落地验证</h2>
+            </div>
+            <div class="event-inference-toolbar">
+              <button id="eventInferenceRefreshBtn" class="primary-btn" type="button">更新完整事件日历并推演</button>
+              <span id="eventInferenceMeta">等待抓取</span>
+            </div>
+          </div>
+
+          <div id="eventInferenceSources" class="event-source-status" aria-live="polite">
+            <span class="event-source-chip is-waiting"><b>消息来源</b> 等待抓取</span>
+          </div>
+
+          <article class="panel event-calendar-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>完整事件日历</h3>
+                <p>产业时间轴、股指交割与美联储议息等短线风险节点全部按日期保存，不删减来源与影响细节。</p>
+              </div>
+              <span id="eventCalendarMeta">等待抓取</span>
+            </div>
+            <div id="eventCalendarList" class="event-calendar-list">
+              <p class="decision-note">尚未取得完整事件日历。</p>
+            </div>
+          </article>
+
+          <article class="panel event-future-panel">
+            <div class="panel-title-row">
+              <div>
+                <h3>未来重大事件 · 现在处于哪一步</h3>
+                <p>直接显示还有几个交易日、当前阶段、影响板块与验证股；事件临近不等于可以买。</p>
+              </div>
+              <span id="eventFutureMajorMeta">等待推演</span>
+            </div>
+            <div id="eventFutureMajorList" class="event-future-list">
+              <p class="decision-note">等待抓取后生成未来事件作战表。</p>
+            </div>
+          </article>
+
+          <div id="eventInferenceHero" class="event-inference-hero is-empty">
+            <div>
+              <span class="event-rule-badge">严格准入</span>
+              <h3>普通消息不会进入交易系统</h3>
+              <p>只有来源、重要性、A股映射和核心验证标的同时过关，才会形成辅助结论。</p>
+            </div>
+            <div class="event-inference-principle">事件不改周期 · 不直接加分 · 不生成无条件买点</div>
+          </div>
+
+          <div id="eventInferenceMetrics" class="event-inference-metrics"></div>
+
+          <details class="panel event-inference-panel ui-disclosure">
+            <summary class="panel-title-row">
+              <div>
+                <h3>已通过系统门槛的事件</h3>
+                <p>重要性、来源和A股核心验证标的同时过关。</p>
+              </div>
+              <span>展开查看系统判断</span>
+            </summary>
+            <div id="eventInferenceQualified" class="event-inference-list">
+              <p class="decision-note">等待抓取后生成。</p>
+            </div>
+          </details>
+
+          <details class="panel event-inference-panel ui-disclosure">
+            <summary class="panel-title-row">
+              <div>
+                <h3>其他观察事件</h3>
+                <p>未来重大节点已在上方单列；这里保留未定日期或证据尚未过线的信息。</p>
+              </div>
+              <span>展开查看低优先级信息</span>
+            </summary>
+            <div id="eventInferenceWatch" class="event-inference-list">
+              <p class="decision-note">等待抓取后生成。</p>
+            </div>
+          </details>
+
+          <details class="panel event-landed-panel ui-disclosure">
+            <summary class="panel-title-row">
+              <div>
+                <h3>已发生事件 · 复盘验证</h3>
+                <p>已落地事件不再占据未来作战表，只用于核对兑现、承接和传导是否符合预期。</p>
+              </div>
+              <span id="eventLandedMeta">0条</span>
+            </summary>
+            <div id="eventLandedList" class="event-landed-list"></div>
+          </details>
+
+          <details class="panel event-inference-panel event-filtered-panel ui-disclosure">
+            <summary class="panel-title-row">
+              <div>
+                <h3>已过滤信息</h3>
+                <p>财富榜、泛观点、单条传闻及无法映射A股的信息在这里被拦截。</p>
+              </div>
+              <span id="eventInferenceFilteredMeta">0条</span>
+            </summary>
+            <div id="eventInferenceFiltered" class="event-filtered-list"></div>
+          </details>
+        </section>
+
+        <section id="review-conclusion" class="section review-conclusion-section" data-view="review-conclusion">
+          <div class="section-heading review-conclusion-heading">
+            <div>
+              <p class="eyebrow">REVIEW CONCLUSION</p>
+              <h2>复盘结论 · 今日到明日</h2>
+            </div>
+            <div class="review-conclusion-toolbar">
+              <button id="reviewConclusionRefreshBtn" class="primary-btn" type="button">重新抓取并更新结论</button>
+              <span id="reviewConclusionMeta">等待抓取</span>
+            </div>
+          </div>
+
+          <div id="reviewConclusionHero" class="review-conclusion-hero is-empty">
+            <span>等待结论</span>
+            <div><h3>还没有可用的盘后快照</h3><p>抓取完成后，这里会把周期、市场表现和明日执行压缩成最终结论。</p></div>
+          </div>
+
+          <div class="review-conclusion-grid">
+            <article class="panel review-conclusion-card">
+              <div class="panel-title-row"><h3>今天的复盘结论</h3><span>发生了什么</span></div>
+              <div id="reviewConclusionToday"><p class="decision-note">等待抓取后生成。</p></div>
+            </article>
+            <article class="panel review-conclusion-card">
+              <div class="panel-title-row"><h3>明天的执行结论</h3><span>做什么 / 不做什么</span></div>
+              <div id="reviewConclusionTomorrow"><p class="decision-note">等待抓取后生成。</p></div>
+            </article>
+          </div>
+
+          <article class="panel review-conclusion-card review-event-panel">
+            <div class="panel-title-row">
+              <div><h3>事件辅助结论</h3><p>只说明催化、兑现与验证条件，不改变今天已经确认的情绪周期。</p></div>
+              <span id="reviewConclusionEventMeta">等待事件筛选</span>
+            </div>
+            <div id="reviewConclusionEvents"><p class="decision-note">等待抓取后生成。</p></div>
+          </article>
+
+          <article class="panel review-conclusion-card review-conclusion-picks-panel">
+            <div class="panel-title-row">
+              <div><h3>候选结论</h3><p>只列观察顺序和最新价格基准，不把候选票写成无条件买入。</p></div>
+              <span id="reviewConclusionPriceAudit">等待价格校验</span>
+            </div>
+            <div id="reviewConclusionPicks" class="review-conclusion-picks"><p class="decision-note">等待抓取后生成。</p></div>
+          </article>
+
+          <details class="panel review-decision-details ui-disclosure">
+            <summary class="panel-title-row">
+              <div><h3>完整分析明细</h3><p>市场、情绪、题材角色、事件和三种明日路径统一收在复盘页，默认折叠。</p></div>
+              <span>展开查看全部依据</span>
+            </summary>
+            <div class="review-decision-details-body">
+              <div class="decision-grid">
+                <div class="panel decision-block">
+                  <h3>① 大盘 · 能不能做</h3>
+                  <div id="decisionMarketBody" class="decision-body">等待抓取。</div>
+                </div>
+                <div class="panel decision-block">
+                  <h3>② 情绪 · 什么阶段</h3>
+                  <div id="decisionEmotionBody" class="decision-body">--</div>
+                </div>
+                <div id="decisionEffectPanel" class="panel decision-block decision-effect-panel" hidden>
+                  <div id="decisionEffectBody" class="decision-body"></div>
+                </div>
+              </div>
+              <div class="panel decision-block">
+                <h3>③ 值得留意的方向 · 与题材库同步</h3>
+                <div id="decisionTopicsBody" class="decision-body">--</div>
+              </div>
+              <div class="panel decision-block decision-event-gate">
+                <div class="panel-title-row">
+                  <h3>事件前置条件 · 只辅助，不改周期</h3>
+                  <span id="decisionEventGate">等待事件筛选</span>
+                </div>
+                <div id="decisionEventBody" class="decision-body">抓取后，只把通过严格门槛的事件带入买入前置条件。</div>
+              </div>
+              <div class="panel decision-block decision-picks">
+                <div class="panel-title-row">
+                  <h3>④ 明日三种路径明细</h3>
+                  <button id="openCoreWatchBtn" class="ghost-btn" type="button">核心观察池</button>
+                </div>
+                <div id="decisionPicksBody" class="decision-body">--</div>
+              </div>
+              <div class="panel decision-block" id="coreWatchPanel" hidden>
+                <div class="panel-title-row">
+                  <h3>核心观察池</h3>
+                  <span id="coreWatchMeta">等待抓取</span>
+                </div>
+                <div id="coreWatchBody" class="decision-body">点一下上面的按钮，查看当前核心回撤票与核心观察票。</div>
+              </div>
+              <div class="panel decision-block">
+                <div class="panel-title-row">
+                  <h3>⑤ 明日可能预期 · 今日无票≠明天没机会</h3>
+                  <span id="decisionOutlookBias" class="outlook-bias">--</span>
+                </div>
+                <div id="decisionOutlookBody" class="decision-body">--</div>
+              </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="sell-advisor" class="section" data-view="sell-advisor">
+          <div class="section-heading">
+            <p class="eyebrow">EXIT ADVISOR</p>
+            <h2>卖出方案 · 持仓收盘复盘</h2>
+          </div>
+          <div class="panel outlook-panel">
+            <div class="panel-title-row">
+              <h3>收盘后的判断框架</h3>
+              <span id="sellAdvisorMeta">等待抓取</span>
+            </div>
+            <div class="decision-toolbar">
+              <button id="sellAdvisorRefreshBtn" class="ghost-btn" type="button">用最新快照重算</button>
+            </div>
+            <div id="sellAdvisorContext" class="decision-body">
+              先录入一只你真实买入的股票，再让模型按板块回流、核心回流、指数预期、资金预期、情绪预期一起给卖法。
+            </div>
+          </div>
+          <div class="sell-advisor-layout">
+            <form id="sellAdvisorForm" class="panel sell-advisor-form">
+              <div class="panel-title-row">
+                <h3>录入当前持仓</h3>
+                <span>先填一只，后面可继续追加</span>
+              </div>
+              <div class="sell-advisor-grid">
+                <label>股票代码<input name="code" placeholder="300065" required /></label>
+                <label>股票名称<input name="name" placeholder="可不填，默认自动带出" /></label>
+                <label>所属板块<input name="sector" placeholder="军工信息化 / 存储芯片" /></label>
+                <label>持仓角色
+                  <select name="role">
+                    <option value="龙头">龙头</option>
+                    <option value="中军">中军</option>
+                    <option value="核心回撤">核心回撤</option>
+                    <option value="补涨">补涨</option>
+                    <option value="后排">后排</option>
+                  </select>
+                </label>
+                <label>买入价<input name="buyPrice" type="number" step="0.01" min="0.01" placeholder="例如 12.34" required /></label>
+                <label>现价<input name="currentPrice" type="number" step="0.01" min="0.01" placeholder="不填则按最新快照" /></label>
+                <label>仓位%<input name="positionPct" type="number" step="1" min="1" max="100" placeholder="30" /></label>
+                <label>买入逻辑<input name="buyReason" placeholder="例：主线核心回撤后承接" /></label>
+              </div>
+              <label class="sell-advisor-note">
+                收盘备注
+                <textarea name="note" rows="3" placeholder="你今天为什么还拿着它，或者你打算怎么处理"></textarea>
+              </label>
+              <button class="primary-btn" type="submit">加入持仓</button>
+            </form>
+            <div class="panel sell-advisor-holdings">
+              <div class="panel-title-row">
+                <h3>当前持仓</h3>
+                <span id="sellAdvisorCount">0</span>
+              </div>
+              <div id="sellAdvisorHoldings" class="sell-advisor-holdings-list"></div>
+            </div>
+          </div>
+          <div class="panel sell-advisor-report">
+            <div class="panel-title-row">
+              <h3>卖出方案</h3>
+              <span id="sellAdvisorUpdatedAt">--</span>
+            </div>
+            <div id="sellAdvisorReport" class="sell-advisor-report-list"></div>
+          </div>
+        </section>
+
+        <section id="survivors" class="section" data-view="survivors">
+          <div class="section-heading">
+            <p class="eyebrow">SECTOR SURVIVORS</p>
+            <h2>活口观察 · 分歧日强者</h2>
+          </div>
+          <div class="panel survivor-panel">
+            <div class="panel-title-row">
+              <h3>板块活口 · 回流日优先记忆</h3>
+              <span id="survivorEnv">等待抓取</span>
+            </div>
+            <p class="decision-note">
+              定义：热门方向被杀跌/内部大分歧时逆势走强的票（板块死了它活着）。
+              下次情绪资金回流时，这类票最容易被优先注意——只观察，不代表买点。
+            </p>
+            <div id="survivorList" class="survivor-list">
+              <p class="decision-note">先在「明日决策」或「选股分析」抓取一次，这里自动生成。</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="journal" class="section" data-view="journal">
+          <div class="section-heading">
+            <p class="eyebrow">TRADE JOURNAL</p>
+            <h2>交易日志 · 出口归因（系统验证自己）</h2>
+          </div>
+
+          <div class="panel journal-stats-panel">
+            <div class="panel-title-row">
+              <h3>出口归因统计 · 哪条线在赚钱、哪条在亏钱</h3>
+              <span id="journalStatsMeta">暂无记录</span>
+            </div>
+            <div id="journalStatsGrid" class="journal-stats-grid"></div>
+            <div id="journalExitTable"></div>
+          </div>
+
+          <div class="journal-layout">
+            <form id="journalForm" class="panel journal-form">
+              <h3>录一笔已平仓交易</h3>
+              <div class="journal-form-grid">
+                <label>代码<input name="code" list="ppCandidates" placeholder="600000" required /></label>
+                <label>名称<input name="name" placeholder="自动带出可改" /></label>
+                <label>方向/板块<input name="sector" placeholder="人形机器人" /></label>
+                <label>买入日期<input name="buyDate" type="date" required /></label>
+                <label>买入价<input name="buyPrice" type="number" step="0.01" min="0.01" required /></label>
+                <label>卖出日期<input name="sellDate" type="date" required /></label>
+                <label>卖出价<input name="sellPrice" type="number" step="0.01" min="0.01" required /></label>
+                <label>仓位%<input name="positionPct" type="number" step="1" min="1" max="100" placeholder="30" /></label>
+                <label>出口（走的哪条线）
+                  <select name="exitGate" required>
+                    <option value="1">①开盘不及预期</option>
+                    <option value="2">②回流没来止损(14:00-14:50)</option>
+                    <option value="3">③破五日线</option>
+                    <option value="4">④强回流止盈</option>
+                    <option value="5">⑤硬止损(-7%/-12%)</option>
+                    <option value="6">⑥高点回撤/保本线</option>
+                    <option value="7">⑦加速见顶止盈</option>
+                  </select>
+                </label>
+                <label class="journal-check"><input name="dualLogic" type="checkbox" />双逻辑票</label>
+                <label>纪律（是否按预案）
+                  <select name="planAdherence" id="planAdherenceSelect" required>
+                    <option value="followed">按预案执行</option>
+                    <option value="deviated">有预案但偏离了</option>
+                    <option value="no_plan">系统外交易（无预案）</option>
+                  </select>
+                </label>
+              </div>
+              <label id="deviationNoteLabel" hidden>偏离说明（必填：预案要求什么/实际做了什么/为什么偏离）
+                <input name="deviationNote" placeholder="例：预案要求竞价≥+3%才买，实际平开也追了，怕踏空" />
+              </label>
+              <label>买入逻辑一句话<input name="entryReason" placeholder="例：主线龙头首次分歧转强" /></label>
+              <label>备注<input name="note" placeholder="选填" /></label>
+              <button class="primary-btn" type="submit">保存这笔交易</button>
+              <p id="journalFormMsg" class="decision-note"></p>
+            </form>
+
+            <div class="panel journal-trades-panel">
+              <div class="panel-title-row">
+                <h3>最近交易</h3>
+                <span id="journalTradesCount">--</span>
+              </div>
+              <div id="journalTradesList"></div>
+            </div>
+          </div>
+
+          <div class="panel outlook-panel">
+            <div class="panel-title-row">
+              <h3>明日可能预期 · 买点前置</h3>
+              <span id="jnOutlookBias" class="outlook-bias">等待抓取</span>
+            </div>
+            <div id="jnOutlookBody" class="outlook-body">
+              <p class="decision-note">收盘后抓取一次，这里按当日分歧衰减信号推明日情景——看完顺手点下方归档落库，喂给明天的对比。</p>
+            </div>
+          </div>
+
+          <div class="panel archive-panel">
+            <div class="panel-title-row">
+              <h3>盘后落库 · 复盘报告（archiver）</h3>
+              <button id="archiveRunBtn" class="primary-btn" type="button">把最近一次抓取归档落库</button>
+            </div>
+            <p class="decision-note">
+              把当日快照存进 data/history 并生成复盘报告——攒历史才能回答"周期判断/打分到底准不准"。
+              建议每个交易日收盘抓取后点一次。
+            </p>
+            <p id="archiveRunMsg" class="decision-note"></p>
+            <div id="archiveIndexList" class="archive-index"></div>
+            <pre id="archiveReportView" class="archive-report" hidden></pre>
+          </div>
+        </section>
+
+        <section id="dashboard" class="hero-section" data-view="dashboard">
+          <div class="hero-copy">
+            <p class="eyebrow">SHORT-TERM A-SHARE MODEL</p>
+            <h1>当日状态</h1>
+            <p>
+              用状态、方向、标的、触发、退出五层结构，记录你每天的短线判断，
+              并自动生成次日交易计划。
+            </p>
+          </div>
+          <div class="status-board">
+            <div>
+              <span>5日情绪大周期</span>
+              <strong id="regimeLabel">待打分</strong>
+              <small class="status-board-note">滚动5个收盘确认，不代表指数5日结构</small>
+            </div>
+            <div>
+              <span>优先打法</span>
+              <strong id="styleLabel">等待输入</strong>
+            </div>
+          </div>
+        </section>
+
+        <section class="section mode-switch-panel" data-view="dashboard">
+          <div class="section-heading">
+            <p class="eyebrow">PAGE SWITCH</p>
+            <h2>双页入口</h2>
+          </div>
+          <div class="mode-switch-grid">
+            <button class="mode-switch-card active" type="button" data-mode-view="dashboard">
+              <span class="mode-switch-mark">A</span>
+              <div>
+                <strong>A股短线模型</strong>
+                <small>复盘 · 选股 · 次日策略</small>
+              </div>
+              <p>当前主场，继续看周期、题材、标的和卖点。</p>
+            </button>
+            <button class="mode-switch-card mode-switch-card-us" type="button" data-mode-view="us">
+              <span class="mode-switch-mark mode-switch-mark-us">US</span>
+              <div>
+                <strong>美股预期框架</strong>
+                <small>纳指 · 费半 · A股预期</small>
+              </div>
+              <p>切到外盘区间，单独看美股涨跌对 A 股的引导。</p>
+            </button>
+          </div>
+        </section>
+
+        <section id="us-dashboard" class="section us-dashboard" data-view="us">
+          <div class="section-heading">
+            <p class="eyebrow">US STOCK FRAMEWORK</p>
+            <h2>美股预期框架</h2>
+          </div>
+          <div class="hero-section hero-section-us">
+            <div class="hero-copy">
+              <p class="eyebrow">US TO A-SHARE BRIDGE</p>
+              <h1 id="usFrameworkHeadlineTop">--</h1>
+              <p id="usFrameworkSublineTop">--</p>
+              <button id="backToAShare" class="primary-btn" type="button" data-mode-view="dashboard">返回 A 股短线模型</button>
+            </div>
+            <div class="status-board status-board-us">
+              <div>
+                <span>外盘结论</span>
+                <strong id="usFrameworkLevelTop">--</strong>
+              </div>
+              <div>
+                <span>A股预期</span>
+                <strong id="usFrameworkExpectationTop">--</strong>
+              </div>
+              <div>
+                <span>风格偏好</span>
+                <strong id="usFrameworkStyleTop">--</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="panel us-framework-panel">
+            <div class="panel-title-row">
+              <h3>美股框架</h3>
+              <span id="usFrameworkLevel">等待抓取</span>
+            </div>
+            <p id="usFrameworkHeadline" class="framework-headline">这里单独看美股涨跌，判断它对 A 股次日开盘和风格的预期。</p>
+            <p id="usFrameworkSubline" class="framework-subline">先看纳指和费半，再看标普和道指，最后落到 A 股是偏进攻、偏防守，还是偏分化。</p>
+            <div id="usFrameworkSignals" class="framework-signals"></div>
+            <div class="us-framework-grid">
+              <div id="usFrameworkIndexes" class="external-indexes"></div>
+              <div class="us-framework-stats">
+                <div><span>加权涨跌</span><strong id="usFrameworkWeighted">--</strong></div>
+                <div><span>科技强弱</span><strong id="usFrameworkTech">--</strong></div>
+                <div><span>广度强弱</span><strong id="usFrameworkBroad">--</strong></div>
+              </div>
+            </div>
+            <div id="usFrameworkReasons" class="external-reasons"></div>
+          </div>
+
+          <div class="panel us-bridge-panel">
+            <div class="panel-title-row">
+              <h3>对 A 股的落点</h3>
+              <span id="usFrameworkOpenBias">--</span>
+            </div>
+            <div class="us-bridge-grid">
+              <div>
+                <span>开盘倾向</span>
+                <strong id="usFrameworkOpenText">--</strong>
+              </div>
+              <div>
+                <span>落地风格</span>
+                <strong id="usFrameworkStyleText">--</strong>
+              </div>
+            </div>
+            <p class="decision-note">这一区间只负责解释外盘怎么影响 A 股，不替代 A 股自身周期判断。</p>
+          </div>
+
+          <div class="panel us-tech-panel">
+            <div class="panel-title-row">
+              <h3>美股科技股观察池</h3>
+              <span id="usTechMeta">等待抓取</span>
+            </div>
+            <p class="decision-note">这里只放对 AI 算力链最有代表性的美股科技票，优先看存储、GPU、设备和网络芯片。</p>
+            <div id="usTechList" class="us-tech-list"></div>
+          </div>
+        </section>
+
+        <section id="cycle-frame" class="section" data-view="dashboard">
+          <div class="section-heading">
+            <p class="eyebrow">TODAY'S FRAMEWORK</p>
+            <h2>今日炒作框架</h2>
+          </div>
+          <div class="panel cycle-frame-panel">
+            <div class="cycle-frame-main">
+              <div class="cycle-frame-cell">
+                <span>炒作阶段</span>
+                <strong id="frameStage">--</strong>
+              </div>
+              <div class="cycle-frame-cell">
+                <span>短线偏好</span>
+                <strong id="framePreference">--</strong>
+              </div>
+              <button id="fetchHotStocksDash" class="primary-btn" type="button">抓取并刷新</button>
+            </div>
+            <div class="market-metrics cycle-frame-metrics">
+              <div><span>操作</span><strong id="frameOperation">--</strong></div>
+              <div><span>建议仓位</span><strong id="framePosition">--</strong></div>
+              <div><span>主攻方向</span><strong id="frameDirection">--</strong></div>
+              <div><span>市场分</span><strong id="frameScore">--</strong></div>
+            </div>
+            <p id="frameEmotion" class="cycle-frame-emotion">涨跌停与情绪趋势：等待抓取</p>
+            <p id="frameBias" class="cycle-frame-bias">先判断当前处于什么炒作阶段，再决定短线偏好是趋势、连板还是轮动。</p>
+          </div>
+        </section>
+
+        <section id="framework" class="section" data-view="framework">
+          <div class="section-heading">
+            <p class="eyebrow">MODEL STRUCTURE</p>
+            <h2>五层交易系统</h2>
+          </div>
+          <div class="system-grid">
+            <article class="system-card">
+              <span>01</span>
+              <h3>状态层</h3>
+              <p>判断退潮、修复、轮动、主升，决定今天有没有短线买点。</p>
+            </article>
+            <article class="system-card">
+              <span>02</span>
+              <h3>方向层</h3>
+              <p>比较活跃板块承接、龙头、中军和催化，只选资金认可的方向。</p>
+            </article>
+            <article class="system-card">
+              <span>03</span>
+              <h3>标的层</h3>
+              <p>只留下板块龙头、首次分歧核心、回流第一强和抱团绝对核心。</p>
+            </article>
+            <article class="system-card">
+              <span>04</span>
+              <h3>触发层</h3>
+              <p>买点限制为首次分歧转强、回流确认、弱转强。</p>
+            </article>
+            <article class="system-card">
+              <span>05</span>
+              <h3>退出层</h3>
+              <p>不及预期、板块回流失败、龙头转弱、时间不延续就退出。</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="realtime" class="section" data-view="dashboard">
+          <div class="section-heading">
+            <p class="eyebrow">REALTIME</p>
+            <h2>实时行情</h2>
+          </div>
+          <div class="realtime-layout">
+            <div class="panel realtime-panel">
+              <div class="panel-title-row">
+                <h3>核心指数与短线龙头</h3>
+                <span id="realtimeUpdatedAt">--</span>
+              </div>
+              <div id="realtimeQuotes" class="realtime-quotes"></div>
+            </div>
+            <div class="panel realtime-health-panel">
+              <div class="panel-title-row">
+                <h3>数据源状态</h3>
+                <span id="realtimeSourceLabel">--</span>
+              </div>
+              <div id="realtimeHealth" class="realtime-health-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="auto-picker" class="section" data-view="auto-picker">
+          <div class="section-heading">
+            <p class="eyebrow">盘后复盘 · 5/6</p>
+            <h2>明日机会 · 盘后核心筛选</h2>
+          </div>
+          <div id="postCloseOpportunityView" class="post-close-opportunity" data-state="waiting" aria-live="polite" aria-busy="false">
+            <div class="post-close-opportunity-empty">
+              <span>明日机会</span>
+              <strong>等待盘后机会报告</strong>
+              <p>报告生成后，这里会先显示结论、原因、题材和核心股票。</p>
+            </div>
+          </div>
+          <details id="autoPickerFullAnalysis" class="auto-picker-full-analysis">
+            <summary class="auto-picker-full-analysis-summary">
+              <span>查看完整分析</span>
+              <small>评分、热榜、风险和原始候选</small>
+            </summary>
+            <div class="auto-picker-full-analysis-body">
+          <div id="premarketStockFlow" class="premarket-inline-flow" aria-live="polite"></div>
+          <div class="picker-layout">
+            <div class="panel picker-control">
+              <div class="picker-copy">
+                <h3>东方财富 + 同花顺热门股前 100</h3>
+                <p>
+                  自动抓取东方财富和同花顺前 100 热股，合并候选池，再按你的复盘框架做剔除：
+                  先分析热度板块，再看板块是否和指数共振，最后提取核心标的价值。
+                </p>
+              </div>
+              <button id="fetchHotStocks" class="primary-btn" type="button">抓取热股池并筛选</button>
+              <div class="picker-meta">
+                <div><span>抓取时间</span><strong id="hotUpdatedAt">--</strong></div>
+                <div><span>东方财富</span><strong id="eastCount">--</strong></div>
+                <div><span>同花顺</span><strong id="thsCount">--</strong></div>
+              </div>
+            </div>
+
+            <div class="panel market-state-panel">
+              <div class="panel-title-row">
+                <h3>市场周期判断</h3>
+                <span id="fetchStatusBadge" class="fetch-status-badge">等待抓取</span>
+              </div>
+              <div id="fetchStatusIssues" class="fetch-issues"></div>
+              <div class="market-state-main">
+                <strong id="marketCycle">--</strong>
+                <span id="marketOperation">等待抓取</span>
+              </div>
+              <div class="market-metrics">
+                <div><span>两市成交</span><strong id="marketAmount">--</strong></div>
+                <div><span>涨跌家数</span><strong id="marketBreadth">--</strong></div>
+                <div><span>市场分</span><strong id="marketScore">--</strong></div>
+                <div><span>建议仓位</span><strong id="marketPosition">--</strong></div>
+              </div>
+              <div id="marketBreadthBreakdown" class="market-breadth-breakdown"></div>
+              <div class="style-box">
+                <span>当前交易风格 / 风格偏好</span>
+                <strong id="tradingStyle">--</strong>
+                <em id="tradingPreference">--</em>
+                <p id="tradingBias">先确认市场风格，再决定买点类型。</p>
+              </div>
+              <p id="marketSummary">先判断周期，再决定是否进攻、防守或聚焦。</p>
+            </div>
+
+            <div class="panel hot-sector-panel">
+              <h3>当前热度方向</h3>
+              <div id="hotConcepts" class="concept-list">
+                <span>等待抓取</span>
+              </div>
+              <div class="rule-note">
+                筛选顺序：双榜前100 > 热度板块聚合 > 板块指数共振 > 核心地位 > 买卖预案。
+              </div>
+            </div>
+          </div>
+
+          <div class="panel external-panel">
+            <div class="panel-title-row">
+              <h3>外部环境与消息面</h3>
+              <span id="externalLevel">等待抓取</span>
+            </div>
+            <div id="externalIndexes" class="external-indexes"></div>
+            <div id="externalCoreQuotes" class="external-core-quotes"></div>
+            <div id="externalReasons" class="external-reasons"></div>
+            <div id="globalNewsList" class="global-news-list"></div>
+          </div>
+
+          <div class="panel risk-board-panel">
+            <div class="panel-title-row">
+              <h3>风险栏</h3>
+              <span id="riskBoardLevel">等待抓取</span>
+            </div>
+            <p id="riskBoardSummary" class="risk-board-summary">这里会提示近期亏钱效应较大的方向，并直接屏蔽这些方向进入候选池。</p>
+            <div id="riskBoardList" class="risk-board-list"></div>
+          </div>
+
+          <div class="anchor-grid">
+            <div class="panel master-leader-panel">
+              <div class="panel-title-row">
+                <h3>总龙头</h3>
+                <span id="emotionAnchorMeta">市场合力未收敛</span>
+              </div>
+              <p id="emotionAnchorTitle" class="master-leader-title">暂无明确总龙头</p>
+              <p id="emotionAnchorReason" class="master-leader-reason">当前主线还在验证，先盯主线里市场合力和高度一起成立的那只票。</p>
+            </div>
+
+            <div class="panel master-leader-panel">
+              <div class="panel-title-row">
+                <h3>容量锚定中军</h3>
+                <span id="capacityAnchorMeta">承接票未收敛</span>
+              </div>
+              <p id="capacityAnchorTitle" class="master-leader-title">暂无明确容量锚定中军</p>
+              <p id="capacityAnchorReason" class="master-leader-reason">先看主线里的容量承接是谁，而不是把情绪票当成容量票。</p>
+            </div>
+          </div>
+
+          <div class="panel framework-panel">
+            <div class="panel-title-row">
+              <h3>框架栏</h3>
+              <span id="frameworkContinuityLabel">等待抓取</span>
+            </div>
+            <p id="frameworkHeadline" class="framework-headline">框架栏会写清本轮周期上涨的炒作逻辑，以及它是否还能持续。</p>
+            <p id="frameworkSubline" class="framework-subline">先看逻辑，再看持续性，再看资金和题材结构，最后决定要不要跟随。</p>
+            <div id="frameworkSignals" class="framework-signals"></div>
+            <div id="frameworkReasons" class="continuity-reasons"></div>
+          </div>
+
+          <div class="panel topic-board-panel">
+            <div class="panel-title-row">
+              <h3>题材栏</h3>
+              <span id="topicBoardConclusion">等待抓取</span>
+            </div>
+            <div id="topicBoardList" class="topic-board-list"></div>
+          </div>
+
+          <div class="panel style-analysis-panel">
+            <div class="panel-title-row">
+              <h3>风格偏好倒推</h3>
+              <span id="styleAnalysisConclusion">等待抓取</span>
+            </div>
+            <div id="styleReverseLogic" class="reverse-logic">
+              <div>倒推路径：先看赚钱效应在哪里，再看载体，再看能否持续，最后决定选股方案。</div>
+            </div>
+            <div class="profit-effect-row">
+              <div>
+                <span>赚钱效应位置</span>
+                <strong id="profitLocation">--</strong>
+              </div>
+              <div>
+                <span>持续性判断</span>
+                <strong id="profitContinuity">--</strong>
+              </div>
+            </div>
+            <div id="profitCases" class="profit-case-grid"></div>
+            <div id="continuityReasons" class="continuity-reasons"></div>
+          </div>
+
+          <div class="panel backtest-panel">
+            <div class="panel-title-row">
+              <h3>倒退回测</h3>
+              <span id="backtestSummaryLabel">等待抓取</span>
+            </div>
+            <div class="backtest-metrics">
+              <div><span>有效样本</span><strong id="btSamples">--</strong></div>
+              <div><span>次日胜率</span><strong id="btWinRate">--</strong></div>
+              <div><span>次日均收</span><strong id="btAvgClose">--</strong></div>
+              <div><span>三日最高</span><strong id="btAvgMax">--</strong></div>
+            </div>
+            <p id="backtestNote">用当前风格条件回看近180日相似触发点，统计次日和三日表现。</p>
+          </div>
+
+          <div class="selection-grid">
+            <div class="panel selection-panel">
+              <div class="panel-title-row">
+                <h3>统一决策链结果股 · 大周期 <span id="selectedCycleBadge">--</span></h3>
+                <span>最多 5 只，允许 0 只 · 热榜只作为上游证据</span>
+              </div>
+              <div id="selectedStocks" class="stock-result-list"></div>
+            </div>
+            <div class="panel selection-panel">
+              <div class="panel-title-row">
+                <h3>剔除观察</h3>
+                <span>做减法，不在弱点上浪费仓位</span>
+              </div>
+              <div id="rejectedStocks" class="stock-result-list compact-list"></div>
+            </div>
+          </div>
+            </div>
+          </details>
+        </section>
+
+        <section id="theme-library" class="section theme-library-section" data-view="theme-library">
+          <div class="section-heading theme-library-heading">
+            <div>
+              <p class="eyebrow">盘后复盘 · 2/6</p>
+              <h2>题材筛选 · 题材库与热榜验证</h2>
+              <p>先从题材库圈出方向，再用两家热门前100验证关注度；只在热榜出现的新方向先进入观察，不直接变成买入候选。</p>
+            </div>
+            <div class="theme-library-toolbar">
+              <label>
+                <span>数据日期</span>
+                <select id="themeLibraryDateSelect" aria-label="题材库数据日期">
+                  <option value="">等待读取</option>
+                </select>
+              </label>
+              <button id="themeLibraryLatestBtn" class="ghost-btn" type="button">回到最新</button>
+              <button id="themeLibraryRefreshBtn" class="primary-btn" type="button">更新最新题材</button>
+            </div>
+          </div>
+          <div id="premarketDirectionFlow" class="premarket-inline-flow" aria-live="polite"></div>
+
+          <div class="panel theme-library-status-panel">
+            <div id="themeLibraryMeta" class="theme-library-meta">正在读取题材库…</div>
+            <div id="themeLibrarySummary" class="theme-library-summary" aria-live="polite">
+              <div><span>热门题材</span><strong>--</strong></div>
+              <div><span>角色股票</span><strong>--</strong></div>
+              <div><span>新晋题材</span><strong>--</strong></div>
+              <div><span>延续题材</span><strong>--</strong></div>
+            </div>
+          </div>
+
+          <div id="themeLibraryList" class="theme-library-list">
+            <div class="empty-state">等待读取每日题材快照。</div>
+          </div>
+        </section>
+
+        <section id="scoring" class="section scoring-layout" data-view="scoring">
+          <div class="panel scoring-panel">
+            <div class="section-heading compact">
+              <p class="eyebrow">DAILY REVIEW</p>
+              <h2>每日复盘打分</h2>
+            </div>
+
+            <form id="scoreForm" class="score-form">
+              <fieldset>
+                <legend>状态层</legend>
+                <label>
+                  指数趋势
+                  <input type="range" name="indexTrend" min="0" max="100" value="55" />
+                </label>
+                <label>
+                  市场宽度
+                  <input type="range" name="marketBreadth" min="0" max="100" value="50" />
+                </label>
+                <label>
+                  情绪反馈
+                  <input type="range" name="emotion" min="0" max="100" value="50" />
+                </label>
+                <label>
+                  量能确认
+                  <input type="range" name="volume" min="0" max="100" value="50" />
+                </label>
+              </fieldset>
+
+              <fieldset>
+                <legend>方向层</legend>
+                <label>
+                  板块相对强度
+                  <input type="range" name="relativeStrength" min="0" max="100" value="60" />
+                </label>
+                <label>
+                  龙头深度
+                  <input type="range" name="leaderDepth" min="0" max="100" value="55" />
+                </label>
+                <label>
+                  持续性
+                  <input type="range" name="continuity" min="0" max="100" value="50" />
+                </label>
+                <label>
+                  板块成交确认
+                  <input type="range" name="sectorVolume" min="0" max="100" value="50" />
+                </label>
+                <label>
+                  催化强度
+                  <input type="range" name="catalyst" min="0" max="100" value="45" />
+                </label>
+              </fieldset>
+
+              <fieldset>
+                <legend>标的层</legend>
+                <label>
+                  板块地位
+                  <input type="range" name="position" min="0" max="100" value="60" />
+                </label>
+                <label>
+                  形态质量
+                  <input type="range" name="pattern" min="0" max="100" value="55" />
+                </label>
+                <label>
+                  个股相对强度
+                  <input type="range" name="stockStrength" min="0" max="100" value="55" />
+                </label>
+                <label>
+                  流动性
+                  <input type="range" name="liquidity" min="0" max="100" value="60" />
+                </label>
+                <label>
+                  拥挤度风险
+                  <input type="range" name="crowding" min="0" max="100" value="35" />
+                </label>
+              </fieldset>
+            </form>
+          </div>
+
+          <div class="panel result-panel">
+            <div class="score-ring">
+              <span id="totalScore">0</span>
+              <small>综合分</small>
+            </div>
+            <div class="result-list">
+              <div>
+                <span>手工环境分层（非权威周期）</span>
+                <strong id="cycleResult">--</strong>
+              </div>
+              <div>
+                <span>方向强度</span>
+                <strong id="sectorResult">--</strong>
+              </div>
+              <div>
+                <span>个股质量</span>
+                <strong id="stockResult">--</strong>
+              </div>
+              <div>
+                <span>交易动作</span>
+                <strong id="actionResult">--</strong>
+              </div>
+            </div>
+            <div class="model-output">
+              <h3>明日策略草案</h3>
+              <p id="strategyText">完成打分后生成策略。</p>
+            </div>
+            <div class="formula-box">
+              <strong>当前公式</strong>
+              <span>RegimeScore / SectorScore / StockScore 加权合成</span>
+            </div>
+            <button id="saveReview" class="primary-btn" type="button">保存今日复盘</button>
+          </div>
+        </section>
+
+        <section id="watchlist" class="section" data-view="watchlist">
+          <div class="section-heading">
+            <p class="eyebrow">CORE POOL</p>
+            <h2>核心标的池</h2>
+          </div>
+          <div class="watchlist-layout">
+            <form id="stockForm" class="panel stock-form">
+              <label>
+                股票名称 / 代码
+                <input name="stockName" placeholder="例如：核心龙头 000000" required />
+              </label>
+              <label>
+                所属方向
+                <input name="sectorName" placeholder="例如：AI、机器人、低空经济" required />
+              </label>
+              <label>
+                角色
+                <select name="role">
+                  <option>板块龙头</option>
+                  <option>核心中军</option>
+                  <option>首次分歧核心</option>
+                  <option>回流第一强</option>
+                  <option>抱团核心</option>
+                </select>
+              </label>
+              <label>
+                交易计划
+                <textarea name="plan" rows="4" placeholder="买点、止损、预期、卖点"></textarea>
+              </label>
+              <button class="primary-btn" type="submit">加入标的池</button>
+            </form>
+            <div class="panel table-panel">
+              <table>
+                <thead>
+                  <tr>
+                    <th>标的</th>
+                    <th>方向</th>
+                    <th>角色</th>
+                    <th>计划</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody id="watchlistBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="preplan" class="section" data-view="preplan">
+          <div class="section-heading">
+            <p class="eyebrow">盘后复盘 · 6/6</p>
+            <h2>重点观察标的</h2>
+          </div>
+          <div id="premarketTradePlanFlow" class="premarket-inline-flow" aria-live="polite"></div>
+
+          <div id="preplanLegacyWorkspace" hidden inert>
+          <div class="panel preplan-cycle-bar">
+            <div class="preplan-cycle-main">
+              <span>今日情绪周期</span>
+              <strong id="ppCycle">--</strong>
+              <em id="ppSubPhase"></em>
+            </div>
+            <div class="market-metrics preplan-cycle-metrics">
+              <div><span>市场分</span><strong id="ppScore">--</strong></div>
+              <div><span>入围门槛</span><strong id="ppMinScore">--</strong></div>
+              <div><span>建议仓位</span><strong id="ppPosition">--</strong></div>
+              <div><span>数据时间</span><strong id="ppStateTime">--</strong></div>
+            </div>
+            <p id="ppLockState" class="preplan-lock-state">--</p>
+          </div>
+
+          <div class="panel outlook-panel">
+            <div class="panel-title-row">
+              <h3>明日可能预期 · 买点前置</h3>
+              <span id="ppOutlookBias" class="outlook-bias">等待抓取</span>
+            </div>
+            <div id="ppOutlookBody" class="outlook-body">
+              <p class="decision-note">抓取一次后，这里按「当日分歧衰减信号」推明日情景：回流 / 分歧延续，各配验证信号与动作。</p>
+            </div>
+          </div>
+
+          <div class="preplan-layout">
+            <form id="preplanForm" class="panel preplan-form">
+              <div class="panel-title-row">
+                <h3>录预案</h3>
+                <span>每晚复盘后录 2-5 只，09:15 锁定</span>
+              </div>
+              <label>
+                计划交易日
+                <input type="date" name="planDate" required />
+              </label>
+              <label>
+                股票代码
+                <input name="code" list="ppCandidates" placeholder="仅可选择当前最终可执行计划内的股票" autocomplete="off" required />
+                <datalist id="ppCandidates"></datalist>
+              </label>
+              <div class="preplan-two-col">
+                <label>
+                  名称
+                  <input name="name" placeholder="选候选池自动带出" />
+                </label>
+                <label>
+                  所属方向
+                  <input name="sector" placeholder="板块 / 题材" />
+                </label>
+              </div>
+              <div class="preplan-radio-row" role="radiogroup" aria-label="逻辑类型">
+                <span>逻辑类型（必选）</span>
+                <label class="pp-inline"><input type="radio" name="logicType" value="single" checked />单逻辑</label>
+                <label class="pp-inline"><input type="radio" name="logicType" value="dual" />双逻辑</label>
+              </div>
+              <label>
+                logicA · 预期逻辑（竞价验证）
+                <textarea name="logicA" rows="2" placeholder="一句话写清为什么买、竞价要验证什么" required></textarea>
+              </label>
+              <label id="ppLogicBField" class="pp-hidden">
+                logicB · 板块回流逻辑（14:00-14:50 盘中验证）
+                <textarea name="logicB" rows="2" placeholder="双逻辑必填：板块回流时底仓怎么处理——资格盘前挣"></textarea>
+              </label>
+              <label class="pp-check"><input type="checkbox" name="isExpectedReflowDay" />是「预期内回流日」</label>
+              <div class="preplan-radio-row" role="radiogroup" aria-label="承接档位">
+                <span>承接档位</span>
+                <label class="pp-inline"><input type="radio" name="chengjie" value="strong" />强（抢筹，判定线上移+1%）</label>
+                <label class="pp-inline"><input type="radio" name="chengjie" value="normal" checked />常规</label>
+                <label class="pp-inline"><input type="radio" name="chengjie" value="weak" />弱（平开算正常，线下移-1%）</label>
+              </div>
+              <div class="preplan-radio-row" role="radiogroup" aria-label="昨日状态">
+                <span>昨日状态</span>
+                <label class="pp-inline"><input type="radio" name="yesterdayStrength" value="strong" checked />强状态（带动性涨停核心）</label>
+                <label class="pp-inline"><input type="radio" name="yesterdayStrength" value="normal" />弱一档（跟风）</label>
+              </div>
+              <label>
+                备注（选填）
+                <textarea name="buyPlan" rows="2" placeholder="买点预案 / 首仓比例 / 其他"></textarea>
+              </label>
+              <p id="ppFormMsg" class="preplan-form-msg"></p>
+              <button id="ppSubmitBtn" class="primary-btn" type="submit">保存预案并生成红线卡</button>
+            </form>
+
+            <div class="preplan-right">
+              <div class="panel preplan-judge-box">
+                <div class="panel-title-row">
+                  <h3>竞价判定（9:25 喂实际开盘涨幅）</h3>
+                  <span>无预案的票也可以查——答案是不该买</span>
+                </div>
+                <div class="judge-row">
+                  <input id="judgeCode" placeholder="代码" autocomplete="off" />
+                  <input id="judgePct" type="number" step="0.01" placeholder="实际开盘涨幅 %" />
+                  <button id="judgeBtn" class="primary-btn" type="button">判定</button>
+                </div>
+                <div id="judgeResult" class="judge-result"></div>
+              </div>
+              <div id="preplanList" class="preplan-list">
+                <div class="empty-state">还没有预案。每晚复盘后从候选池「录预案」，保存即生成红线卡。</div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </section>
+
+        <section id="playbook" class="section" data-view="playbook">
+          <div class="section-heading">
+            <p class="eyebrow">PLAYBOOK</p>
+            <h2>交易剧本</h2>
+            <p>这里只说明模式适用条件，不生成当日交易许可或仓位；当日结论以“明日决策”的统一决策链为唯一权威。</p>
+          </div>
+          <div class="playbook-grid">
+            <article class="playbook-item">
+              <h3>主升模型</h3>
+              <p>主线强、板块效应强、指数配合时，做主线龙头首次分歧后的回流。</p>
+              <span>仓位：仅在统一决策链授权后，按当日个股分配执行</span>
+            </article>
+            <article class="playbook-item">
+              <h3>轮动模型</h3>
+              <p>多方向切换时，只做回流第一强，弱方向和后排直接放弃。</p>
+              <span>仓位：仅在统一决策链授权后，按当日个股分配执行</span>
+            </article>
+            <article class="playbook-item">
+              <h3>修复模型</h3>
+              <p>指数或情绪有修复预期时小仓试错，只买最核心，失败立即撤。</p>
+              <span>仓位：仅在统一决策链授权后，按当日个股分配执行</span>
+            </article>
+            <article class="playbook-item">
+              <h3>退潮模型</h3>
+              <p>亏钱效应扩散、高标负反馈、炸板率高时，空仓优先。</p>
+              <span>仓位：仅读取统一决策链；授权关闭时为 0%</span>
+            </article>
+          </div>
+        </section>
+
+        <section class="section history-section" data-view="watchlist">
+          <div class="section-heading">
+            <p class="eyebrow">ARCHIVE</p>
+            <h2>复盘记录</h2>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
+
+        <section class="section history-section" data-view="watchlist">
+          <div class="section-heading">
+            <p class="eyebrow">ENTRY ARCHIVE</p>
+            <h2>历史入选框架</h2>
+          </div>
+          <div id="entryHistoryList" class="history-list"></div>
+        </section>
+
+      </main>
+    </div>
+
+    <script src="./sell-engine.js"></script>
+   <script src="./preplan-scenario-workbench.js?v=20260830-v1"></script>
+   <script src="./premarket-flow.js?v=20260830-conditional-playbook-v1"></script>
+  <script src="./script.js?v=20260830-focus-watchlist-v1"></script>
+  </body>
+</html>

@@ -1,0 +1,14 @@
+title = "A shares one piece Gitleaks configuration"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Known domain enum labels that are not credentials"
+targetRules = ["generic-api-key"]
+regexTarget = "line"
+regexes = [
+  '''exitKey\s*=\s*"peak_profit_70_protection_exit"''',
+  '''\.key,\s*"peak_profit_70_protection_exit"''',
+  '''key\s*===\s*"leadership_(?:dynamic|fixed_35)"''',
+]
