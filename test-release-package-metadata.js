@@ -108,8 +108,11 @@ test("GitHub工作流以只读权限在临时Windows机器构建并执行安装�
     /npm run desktop:dist/,
     /Build-ReleaseManifest\.ps1/,
     /Test-WindowsInstaller\.ps1/,
-    /actions\/upload-artifact@v4/,
+    /actions\/checkout@[a-f0-9]{40} # v7\.0\.1/,
+    /actions\/setup-node@[a-f0-9]{40} # v7\.0\.0/,
+    /actions\/upload-artifact@[a-f0-9]{40} # v7\.0\.1/,
   ]) assert.match(installerWorkflow, pattern);
   assert.doesNotMatch(installerWorkflow, /secrets\./);
+  assert.doesNotMatch(installerWorkflow, /uses:\s+actions\/.+@v\d+/);
   assert.doesNotMatch(installerWorkflow, /A股短线模型-(?:Setup|Portable).*\.exe\s*$/m);
 });
