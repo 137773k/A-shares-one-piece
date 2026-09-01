@@ -114,5 +114,19 @@ test("GitHub工作流以只读权限在临时Windows机器构建并执行安装�
   ]) assert.match(installerWorkflow, pattern);
   assert.doesNotMatch(installerWorkflow, /secrets\./);
   assert.doesNotMatch(installerWorkflow, /uses:\s+actions\/.+@v\d+/);
-  assert.doesNotMatch(installerWorkflow, /A股短线模型-(?:Setup|Portable).*\.exe\s*$/m);
+});
+
+test("只有通过标签验收的同批安装包才进入发布候选工件", () => {
+  for (const pattern of [
+    /Upload validated release packages/,
+    /success\(\) && startsWith\(github\.ref, 'refs\/tags\/v'\)/,
+    /name: windows-release-\$\{\{ github\.ref_name \}\}/,
+    /compression-level: 0/,
+    /release\/A股短线模型-Setup-\*-x64\.exe/,
+    /release\/A股短线模型-Portable-\*-x64\.exe/,
+    /release\/SHA256SUMS\.txt/,
+    /release\/release-manifest\.json/,
+  ]) assert.match(installerWorkflow, pattern);
+  assert.doesNotMatch(installerWorkflow, /contents:\s+write/);
+  assert.doesNotMatch(installerWorkflow, /gh release create/);
 });
