@@ -38425,6 +38425,11 @@ function hotStocksRenderRefreshStage(stage, details = {}) {
       preserveLabel: true,
       items: sourceStatus && sourceStatus.items || [],
     },
+    observationOnly: {
+      level: "partial",
+      label: `✓ ${snapshotDate ? `${snapshotDate} ` : "当日"}数据已抓取 · 正式决策条件未齐，仅供观察`,
+      items: sourceStatus && sourceStatus.items || [],
+    },
     legacy: {
       level: "partial",
       label: hasSnapshot
@@ -38948,12 +38953,8 @@ async function loadHotStocksRefreshCache(options = {}) {
   }
   const directBuyEligible = setPremarketDirectBuyPayloadFresh(payload, true);
   setPremarketDirectBuyPayloadFresh(payload, false);
-  const latestCompletedTradingDay = resolveLatestCompletedTradingDaySnapshot(payload);
-  if (!directBuyEligible && !latestCompletedTradingDay.eligible) {
-    const error = new Error("后台刷新快照已过期或来源状态不允许执行");
-    error.code = "HOT_STOCKS_REFRESH_NOT_FRESH";
-    throw error;
-  }
+  // 成功且代次一致的抓取结果始终可以用于观察。执行资格由独立的
+  // freshness/quality 门控制，不能因为正式决策被阻断就把整页数据隐藏。
   payload.clientRefreshVerified = true;
   renderHotStocks(payload);
   setDecisionAuthority("local", payload);
@@ -39024,14 +39025,19 @@ async function performHotStocksLoad(options = {}) {
     const fresh = premarketDirectBuyPayloadFresh(payload);
     const latestCompletedTradingDay = resolveLatestCompletedTradingDaySnapshot(payload);
     const reuseLatestCompletedTradingDay = !fresh && latestCompletedTradingDay.eligible;
-    hotStocksRenderRefreshStage(reuseLatestCompletedTradingDay ? "latestTradingDay" : "succeeded", {
-      hasSnapshot: true,
-      payload,
-      tradingDate: latestCompletedTradingDay.tradingDate,
-    });
+    const observationOnly = !fresh && !reuseLatestCompletedTradingDay;
+    hotStocksRenderRefreshStage(
+      reuseLatestCompletedTradingDay ? "latestTradingDay" : observationOnly ? "observationOnly" : "succeeded",
+      {
+        hasSnapshot: true,
+        payload,
+        tradingDate: latestCompletedTradingDay.tradingDate,
+      },
+    );
     return {
       ok: true,
       fresh,
+      observationOnly,
       reusedLatestCompletedTradingDay: reuseLatestCompletedTradingDay,
       mode: "background",
       source: "/api/hot-stocks",

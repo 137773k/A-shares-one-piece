@@ -466,6 +466,111 @@ test("successful non-trading-day refresh reuses the latest completed trading-day
   assert.equal(statuses.some((label) => label.includes("后台刷新失败")), false);
 });
 
+test("successful partial refresh renders current observation data while execution stays closed", async () => {
+  const payload = recentRefreshPayload();
+  payload.fetchStatus = {
+    level: "partial",
+    mode: "unavailable",
+    evidenceStatus: "incomplete",
+    items: [{
+      name: "K线/均线",
+      ok: false,
+      statusKey: "unavailable",
+      requestedCount: 2,
+      unavailableCount: 1,
+    }],
+  };
+  payload.sources.klineDiagnostics = {
+    version: 2,
+    statusKey: "unavailable",
+    expectedCompletedTradingDate: payload.tradingDate,
+    requested: 2,
+    east: 1,
+    tencent: 0,
+    cached: 0,
+    sameDayCache: 0,
+    unavailable: 1,
+    failed: 1,
+  };
+  const statuses = [];
+  const rendered = [];
+  const renderedFlows = [];
+  const sandbox = {
+    console: { error() {} },
+    Date,
+    Error,
+    Promise,
+    setTimeout,
+    clearTimeout,
+    HOT_STOCKS_REFRESH_POLL_TIMEOUT_MS: 120000,
+    HOT_STOCKS_REFRESH_POLL_INTERVAL_MS: 0,
+    HOT_STOCKS_REFRESH_REQUEST_TIMEOUT_MS: 10000,
+    HOT_STOCKS_FETCH_TIMEOUT_MS: 85000,
+    fetchHotStocks: button("抓取热股池并筛选"),
+    fetchHotStocksDash: button("抓取并刷新"),
+    selectedStocks: { innerHTML: "" },
+    rejectedStocks: { innerHTML: "" },
+    lastHotPayload: null,
+    document: {
+      querySelector(selector) {
+        if (selector === "#fetchHotStocksDecision") return button("一键抓取并生成决策");
+        if (selector === "#decisionPicksBody") return { innerHTML: "" };
+        return null;
+      },
+    },
+    hasReadyPostCloseOpportunity() { return false; },
+    renderPostCloseOpportunity() {},
+    setText() {},
+    renderFetchStatus(status) { statuses.push(status.label); },
+    renderHotStocks(value) { rendered.push(value); sandbox.lastHotPayload = value; },
+    renderPremarketFlow(value) { renderedFlows.push(value); },
+    setDecisionAuthority(authority, value) {
+      assert.equal(authority, "local");
+      assert.equal(value, payload);
+    },
+    loadRealtime() {},
+    escapeHtml(value) { return String(value); },
+    async hotStocksJsonRequest(url) {
+      if (url.endsWith("/refresh")) {
+        return { response: { ok: true, status: 202 }, payload: { refresh: { status: "running", inFlight: true } } };
+      }
+      if (url.endsWith("/status")) {
+        return { response: { ok: true, status: 200 }, payload: { refresh: { status: "succeeded", generationId: payload.generationId } } };
+      }
+      if (url.endsWith("/cache")) return { response: { ok: true, status: 200 }, payload };
+      throw new Error(`unexpected URL ${url}`);
+    },
+  };
+  installDirectBuyFreshness(sandbox);
+  vm.runInNewContext(
+    [
+      extractFunction(scriptSource, "hotStocksSetButtonsLoading"),
+      extractFunction(scriptSource, "hotStocksFriendlyError"),
+      extractFunction(scriptSource, "hotStocksRenderRefreshStage"),
+      extractFunction(scriptSource, "normalizeHotStocksRefreshContract"),
+      extractFunction(scriptSource, "hotStocksRefreshFailure"),
+      extractFunction(scriptSource, "hotStocksRefreshTimeout"),
+      extractFunction(scriptSource, "pollHotStocksRefresh"),
+      extractFunction(scriptSource, "loadHotStocksRefreshCache"),
+      extractFunction(scriptSource, "performHotStocksLoad"),
+      "this.perform = performHotStocksLoad;",
+    ].join("\n"),
+    sandbox,
+  );
+
+  const result = await sandbox.perform({ preserveCurrent: false });
+  assert.equal(result.ok, true, JSON.stringify(result));
+  assert.equal(result.fresh, false);
+  assert.equal(result.observationOnly, true);
+  assert.equal(result.reusedLatestCompletedTradingDay, false);
+  assert.equal(payload.clientRefreshVerified, true);
+  assert.equal(sandbox.isDirectBuyFresh(payload), false);
+  assert.equal(rendered.at(-1), payload);
+  assert.equal(renderedFlows.at(-1), payload);
+  assert.ok(statuses.some((label) => label.includes(payload.tradingDate) && label.includes("数据已抓取") && label.includes("仅供观察")));
+  assert.equal(statuses.some((label) => label.includes("后台刷新失败")), false);
+});
+
 test("refresh cache generation mismatch fails closed before rendering", async () => {
   const cachedPayload = recentRefreshPayload();
   const rendered = [];
