@@ -56,6 +56,7 @@ test("Electron安装包只包含程序资源，不打包本机data、dist或运�
   const positiveRules = files.filter((rule) => typeof rule === "string" && !rule.startsWith("!"));
   assert.equal(positiveRules.some((rule) => rule === "data/**/*" || rule.startsWith("data/")), false);
   assert.equal(positiveRules.some((rule) => rule === "dist/**/*" || rule.startsWith("dist/")), false);
+  assert.equal(positiveRules.includes("data-providers/**/*"), true);
   for (const snapshot of [".hot-stocks-cache.json", ".eastmoney-market.json", ".cycle-state.json"]) {
     assert.equal(positiveRules.includes(snapshot), false);
   }

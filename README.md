@@ -45,6 +45,21 @@ macOS:   ~/Library/Application Support/a-share-trading-model/runtime
 - 云端正式决策不是基础功能。未配置时状态应为 `disabled`，本地应用仍可运行。
 - AKShare和JQData脚本属于开发者的验证、回填工具，不包含在普通用户安装包中。
 
+## 可替换数据源
+
+决策引擎已经冻结；数据源只能提供行情证据，不能修改周期、偏好、候选、权限或仓位。未配置用户数据源时，程序自动使用当前东方财富、同花顺、腾讯和本机同日缓存组成的免费保底源。
+
+桌面版通过“软件 → 打开数据源目录”查看本地适配器目录。配置文件位于运行目录：
+
+```text
+data/provider-config.json
+data/providers/<module>.cjs
+```
+
+参考 `data/provider-config.example.json` 和仓库中的 `data-providers/README.md`。配置文件只能保存模块文件名、优先级和环境变量名称；Token、密码、Cookie和API Key必须保留在本机环境变量中，禁止写入源码或配置文件。
+
+用户数据源按能力优先调用，失败、错交易日、错复权或夹带决策权限字段时自动拒绝，并回退到免费保底源。免费源属于尽力而为能力，不承诺第三方接口永久稳定。
+
 ## 从源码运行
 
 开发者需要：

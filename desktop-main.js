@@ -72,6 +72,13 @@ function copySeedData(sourceRoot, runtimeRoot) {
   for (const directory of [runtimeData, path.join(runtimeData, "history"), path.join(runtimeData, "reports")]) {
     fs.mkdirSync(directory, { recursive: true });
   }
+  fs.mkdirSync(path.join(runtimeData, "providers"), { recursive: true });
+
+  const providerConfigExample = path.join(sourceRoot, "data-providers", "provider-config.example.json");
+  const runtimeProviderConfigExample = path.join(runtimeData, "provider-config.example.json");
+  if (fs.existsSync(providerConfigExample) && !fs.existsSync(runtimeProviderConfigExample)) {
+    fs.copyFileSync(providerConfigExample, runtimeProviderConfigExample);
+  }
 
   // Only seed current state. Historical cache trees are intentionally not copied
   // into every installation; the desktop app creates and retains its own history.
@@ -124,6 +131,10 @@ function installMenu(runtimeRoot) {
         {
           label: "打开数据目录",
           click: () => shell.openPath(runtimeRoot),
+        },
+        {
+          label: "打开数据源目录",
+          click: () => shell.openPath(path.join(runtimeRoot, "data", "providers")),
         },
         { type: "separator" },
         { role: "quit", label: "退出" },

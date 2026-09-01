@@ -83,6 +83,7 @@
     "files": [
       "*.js",
       "quant-decision/**/*",
+      "data-providers/**/*",
       "backtest/**/*",
       "*.html",
       "*.css",

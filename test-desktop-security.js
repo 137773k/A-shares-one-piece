@@ -34,3 +34,10 @@ test("发布包启用ASAR且只解包必要的行情子进程", () => {
   assert.equal(packageJson.build.asar, true);
   assert.deepEqual(packageJson.build.asarUnpack, ["eastmoney-fetcher.js"]);
 });
+
+test("桌面版只复制数据源配置示例并创建本地适配器目录", () => {
+  assert.match(source, /provider-config\.example\.json/);
+  assert.match(source, /path\.join\(runtimeData, "providers"\)/);
+  assert.doesNotMatch(source, /copyFileSync\([^\n]*provider-config\.json/);
+  assert.match(source, /打开数据源目录/);
+});
