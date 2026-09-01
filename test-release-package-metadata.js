@@ -28,6 +28,7 @@ test("1.2.0发布元数据、Node边界和安装包名称保持一致", () => {
   assert.equal(packageJson.engines.node, ">=22.12.0");
   assert.equal(packageJson.build.win.target.some((item) => item.target === "nsis"), true);
   assert.equal(packageJson.build.win.target.some((item) => item.target === "portable"), true);
+  assert.match(packageJson.scripts["desktop:dist"], /--publish never/);
   assert.match(packageJson.build.nsis.artifactName, /Setup-\$\{version\}-\$\{arch\}/);
   assert.match(packageJson.build.portable.artifactName, /Portable-\$\{version\}-\$\{arch\}/);
 });
@@ -105,7 +106,7 @@ test("GitHub工作流以只读权限在临时Windows机器构建并执行安装�
     /node-version: "22\.12\.0"/,
     /npm run test:quant-decision/,
     /npm test/,
-    /npm run desktop:dist -- --publish never/,
+    /npm run desktop:dist/,
     /Build-ReleaseManifest\.ps1/,
     /Test-WindowsInstaller\.ps1/,
     /actions\/checkout@[a-f0-9]{40} # v7\.0\.1/,

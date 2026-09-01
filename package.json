@@ -52,7 +52,7 @@
     "dump": "node server.js --dump-data",
     "desktop": "electron .",
     "desktop:dir": "electron-builder --win --x64 --dir",
-    "desktop:dist": "electron-builder --win --x64"
+    "desktop:dist": "electron-builder --win --x64 --publish never"
   },
   "dependencies": {
     "ws": "^8.21.3"
