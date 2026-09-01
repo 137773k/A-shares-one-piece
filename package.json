@@ -67,7 +67,10 @@
   "build": {
     "appId": "com.ashare.tradingmodel",
     "productName": "A股短线模型",
-    "asar": false,
+    "asar": true,
+    "asarUnpack": [
+      "eastmoney-fetcher.js"
+    ],
     "npmRebuild": false,
     "directories": {
       "output": "release"
