@@ -1,0 +1,807 @@
+{
+  "schemaVersion": 1,
+  "authority": "a_share_backtest_contract_v1",
+  "contractVersion": "v9",
+  "status": "frozen",
+  "name": "A股情绪周期统一决策回测V9公开仓库基线",
+  "strategyBaseline": {
+    "baselineId": "unified-decision-v3-factors-v6-minute-sell-v9-public",
+    "sourceCommit": "f80207cc4ccf0a009a1eb0df29e369575f750488",
+    "strategyHash": "7b79b508895809b2b070e8fc70b24c4b403d368eb25378458a97d9aa9b18e36f",
+    "versions": {
+      "decisionChain": 3,
+      "unifiedQuantFactors": 6,
+      "stockFactorAuthority": "unified_stock_factor_engine_v4",
+      "stockFactorEngine": 4,
+      "minuteEvidenceAuthority": "unified_minute_evidence_hierarchy_v1",
+      "minuteEvidenceVersion": 1,
+      "sellDecisionEntryAuthority": "canonical_v7_sell_decision_entry_v1",
+      "sellDecisionEntryVersion": 1,
+      "sellStrategyAuthority": "canonical_position_sell_strategy_v7",
+      "sellStrategyVersion": 1,
+      "sellStrategyMethod": "layered_upper_context_then_verified_1m_fail_closed_v1"
+    },
+    "factorRegistryHash": "4f91e24a8162cad8daec066e5afd489e7b95ba161e600d5fddc1f3cdf2f3ae39",
+    "sourceTree": {
+      "policy": "tracked_production_js_v1",
+      "fileCount": 81,
+      "hash": "280bab7779ffc0d5cd427709e4c059e7f70eba85ba492a4469b6b79e5f87685b"
+    },
+    "sourceFiles": [
+      {
+        "path": "server.js",
+        "scope": "strategy_orchestration",
+        "sha256": "192e4da1ae9607f7c90d2978362b3684e231218ac10076684faba33db95ef899"
+      },
+      {
+        "path": "archiver.js",
+        "scope": "evidence_freeze",
+        "sha256": "b2e95d25dfe46925fd5be3f3b73b55cd2b72f0fa88f7ab16ae965bed9bacf176"
+      },
+      {
+        "path": "quant-decision/market-cycle-contract.js",
+        "scope": "market_cycle",
+        "sha256": "e0d68a429724f6ca7fedca891de53eda64ec493a234717e41d9043da88c6437b"
+      },
+      {
+        "path": "market-phase-detail.js",
+        "scope": "market_stage",
+        "sha256": "614579d1df648749828f18bb621e3056c92f6fc110f5a90e121d48578ec98dbb"
+      },
+      {
+        "path": "emotion-cycle-engine.js",
+        "scope": "emotion_cycle",
+        "sha256": "251f13e687ede70c009bc8fa7a874e70305d4bb8d6f1a1a4d915559e6bcd0895"
+      },
+      {
+        "path": "core-emotion-lifecycle.js",
+        "scope": "emotion_lifecycle",
+        "sha256": "d8ffb5d9bbb50770eb719e99b516c2a8638926774218a6582803e904f4447081"
+      },
+      {
+        "path": "core-leadership.js",
+        "scope": "leadership",
+        "sha256": "cf3d0af9a37f01e9de33658d5caabeb5c82541cb3940e8d6414f3bcd91999562"
+      },
+      {
+        "path": "trading-style-preference.js",
+        "scope": "style_preference",
+        "sha256": "041fc667d6c9991155e24fa36101e8215863ccc83acae50359e445ffcb54b047"
+      },
+      {
+        "path": "trading-rules.js",
+        "scope": "hard_gate",
+        "sha256": "9f6eddf19d2a10b51dc0bb630f1841aeae579679f2506af5f5570bbfa962c8df"
+      },
+      {
+        "path": "market-cap-carrier.js",
+        "scope": "market_cap_carrier",
+        "sha256": "3f4baf3e44fce03e0d6bff01a415ab4586ac1605dfe4b92e951a40b2e4c6a62c"
+      },
+      {
+        "path": "market-effect-attribution.js",
+        "scope": "profit_effect",
+        "sha256": "254778bf1c2ab03957b871cdf223ba7eca199c145c36db1cbf908f8174dbbfad"
+      },
+      {
+        "path": "premarket-flow.js",
+        "scope": "premarket_gate",
+        "sha256": "731a55d72cf683463dce801c45b275dc54dc6fda32b12dcd135e879f1f53cb66"
+      },
+      {
+        "path": "tomorrow-decision-context.js",
+        "scope": "decision_context",
+        "sha256": "3b9e285857b9385d05887c15b0be0a16a9d6683c4776122302f58fa08e61bce7"
+      },
+      {
+        "path": "tomorrow-market-forecast.js",
+        "scope": "market_forecast",
+        "sha256": "c98f42df9026507f10ec2b01bccf96efaffb09234fbbcbb05bb17cfa79d0db56"
+      },
+      {
+        "path": "theme-library.js",
+        "scope": "theme_identity",
+        "sha256": "1826533c967dea373d76f30ab305552d38c67f0936373bf6ee2f492e6b6c5751"
+      },
+      {
+        "path": "leader-select.js",
+        "scope": "candidate_role",
+        "sha256": "24e104c93a963a963d0d2c706f2a12086d21026612db65b23484be8317f6f005"
+      },
+      {
+        "path": "quant-decision/decision-chain.js",
+        "scope": "canonical_decision",
+        "sha256": "2af3d712b81e4b76267368a1d290da5cbca567e8189b74ce75e03cf443acddf0"
+      },
+      {
+        "path": "quant-decision/stock-factor-engine.js",
+        "scope": "stock_factor",
+        "sha256": "d02be7e6b9fdff5d4cf0157bfca57956805b6de2074d82f68b23a2fa99de890a"
+      },
+      {
+        "path": "unified-quant-factors.js",
+        "scope": "factor_registry",
+        "sha256": "5321654be1bd0dafb17bcba05c86bddc4a03f3bcbee8352a9d68249b7e4c8908"
+      },
+      {
+        "path": "quant-decision/execution-feasibility.js",
+        "scope": "execution_gate",
+        "sha256": "41ad67b574f14066521152dade19af537cb2e8cf0dd31806f529fd7ccb0cdfc5"
+      },
+      {
+        "path": "quant-decision/execution-replay.js",
+        "scope": "execution_replay",
+        "sha256": "ae407c7bfb1647c629bd5ad501d192898594dd307d62e42ac419e37997c19983"
+      },
+      {
+        "path": "quant-decision/decision-receipt.js",
+        "scope": "decision_receipt",
+        "sha256": "2f80c9b25d9ad182bfa3533ed720f58f9b37660326ed98c9094875ed75b83db5"
+      },
+      {
+        "path": "quant-decision/decision-outcome.js",
+        "scope": "outcome_settlement",
+        "sha256": "911440c3f918793f975ac03bc95dd74516a35bea4835c8b372a953bba13508c3"
+      },
+      {
+        "path": "quant-decision/outcome-evidence.js",
+        "scope": "outcome_evidence",
+        "sha256": "72c23dfd310898ae094611af933dc21b05605a7e874879e3e34dbe0c35dd42b9"
+      },
+      {
+        "path": "quant-decision/decision-ledger.js",
+        "scope": "outcome_ledger",
+        "sha256": "b1f784b7e0c2cd0566e281c359cd4196bcef6d27eb34590978b200ba9101b1ac"
+      },
+      {
+        "path": "quant-decision/minute-evidence.js",
+        "scope": "minute_evidence",
+        "sha256": "0469b21ec3f74e3bf986722954de547ad367d9cbb86cda81df063ce5be09e29e"
+      },
+      {
+        "path": "quant-decision/v7-sell-decision.js",
+        "scope": "production_sell_entry",
+        "sha256": "c842c31b1ec7004d571acbc27f1b34f37d09163e2132f8b7a741525ae03b4b91"
+      },
+      {
+        "path": "quant-decision/index.js",
+        "scope": "strategy_exports",
+        "sha256": "06330d1ede14b9b628deb4d6b0f5f5c3bfd30c809192fdc19cf8a7650cbfd07a"
+      },
+      {
+        "path": "sell-engine.js",
+        "scope": "v7_sell_state_machine",
+        "sha256": "bfb1e113a794103080499aa4c8b8c2ebe31302a3de70062ac498d101642abdb8"
+      },
+      {
+        "path": "fetch_jqdata_minute_outcomes.py",
+        "scope": "tier1_minute_adapter",
+        "sha256": "5b9ef1ccd26ab38b0d6c9e0266d9ab8dcadb375e0c5c5a79c0d4a8ee963f30e1"
+      },
+      {
+        "path": "fetch_akshare_1m_outcomes.py",
+        "scope": "tier2_minute_adapter",
+        "sha256": "795a3255c29fcbcb377e3034af8ed968ea9f61ab58896b1de06e30ad39a0813f"
+      },
+      {
+        "path": "run-jqdata-tool.js",
+        "scope": "tier1_adapter_runner",
+        "sha256": "eb4547bb7dca9ecf2f755e39199fbe0cdfc47b0684d559bdde42ff398b59ecd2"
+      },
+      {
+        "path": "run-python-tool.js",
+        "scope": "tier2_adapter_runner",
+        "sha256": "44bc3d91d92ad1366b6aa430ba53eb12c9305b409f71cd3fb789020fc0823b0f"
+      },
+      {
+        "path": "requirements-jqdata.txt",
+        "scope": "tier1_adapter_runtime",
+        "sha256": "eb645e82bf010743b3d9ed37b72347efe41372b7252bcbc9251448a75ded54e8"
+      },
+      {
+        "path": "requirements-akshare.txt",
+        "scope": "tier2_adapter_runtime",
+        "sha256": "2e19be990dd0b641024bc89eec24ce5f31e17b2f40234559862e06c62dd1c612"
+      }
+    ]
+  },
+  "signals": {
+    "asDecided": {
+      "time": "T_CLOSE_AFTER_15_00_ASIA_SHANGHAI",
+      "authority": "canonical_decision_receipt_v1",
+      "version": 1,
+      "method": "same_generation_canonical_projection_sha256_v1",
+      "resultPath": "decisionReceipt.decision.result.stocks",
+      "receiptStatus": "live_canonical",
+      "nonEmptyResultRequiresAuthorizationPassed": true,
+      "closedAuthorizationRequiresEmptyResult": true,
+      "cashOnlyReceiptAllowed": true,
+      "authorizationPath": "decisionReceipt.decision.authorization.passed",
+      "asDecided": true,
+      "maxResultStocks": 5,
+      "requiredIdentityFields": [
+        "receiptId",
+        "hashes.decisionHash",
+        "hashes.receiptHash",
+        "generation.tradingDate"
+      ],
+      "allowObservationCandidates": false,
+      "allowLegacySelected": false,
+      "allowForcedCandidate": false
+    },
+    "counterfactual": {
+      "time": "T_CLOSE_AFTER_15_00_ASIA_SHANGHAI",
+      "authority": "counterfactual_unified_decision_projection_v1",
+      "version": 1,
+      "resultPath": "counterfactualDecision.result.stocks",
+      "receiptAllowed": false,
+      "nonEmptyResultRequiresAuthorizationPassed": true,
+      "closedAuthorizationRequiresEmptyResult": true,
+      "cashOnlyProjectionAllowed": true,
+      "authorizationPath": "counterfactualDecision.authorization.passed",
+      "asDecided": false,
+      "maxResultStocks": 5,
+      "baseStrategyHash": "7b79b508895809b2b070e8fc70b24c4b403d368eb25378458a97d9aa9b18e36f",
+      "candidateStrategyHashRequired": true,
+      "definitionHashRequired": true,
+      "generationTimestampRequired": true,
+      "pointInTimeCutoff": "T_CLOSE_NO_FUTURE_DATA",
+      "allowLiveReceiptAsInput": false,
+      "coincidentalStockOverlapAllowed": true
+    }
+  },
+  "minuteEvidence": {
+    "authority": "unified_minute_evidence_hierarchy_v1",
+    "version": 1,
+    "barIntervalMinutes": 1,
+    "fullSessionBarCount": 240,
+    "priceMode": "RAW_UNADJUSTED",
+    "acceptedSourceTimestampConventions": [
+      "BAR_END_ASIA_SHANGHAI",
+      "BAR_START_ASIA_SHANGHAI"
+    ],
+    "barStartObservationPolicy": "OBSERVED_AT_BAR_START_PLUS_60_SECONDS",
+    "decisionDeadlineObservationTime": "14:55",
+    "priceContentHashScope": "canonical_a_share_1m_ohlcv_v1",
+    "priceTiersInPriorityOrder": [
+      "jqdata_verified_raw_1m",
+      "akshare_verified_raw_1m"
+    ],
+    "legacy5mPolicy": "LEGACY_ENTRY_VALIDATION_ONLY_NOT_V7",
+    "observationPolicy": "OBSERVATION_ONLY_NOT_V7",
+    "strictFullSessionPositiveTurnoverRequired": true,
+    "executionAuthority": false,
+    "sealTick": {
+      "contentHashScope": "canonical_seal_tick_bid1_v1",
+      "maxGapSeconds": 5,
+      "quoteChangesIncludedRequired": true,
+      "proxyPolicy": "REAL_TICK_BID1_ONLY_NO_1M_VOLUME_PROXY",
+      "productionInputPolicy": "NOT_ACCEPTED_UNTIL_SIGNED_TICK_INGESTION"
+    }
+  },
+  "sellVariants": {
+    "CORE_1M": {
+      "verifiedRaw1mRequired": true,
+      "sealTickRequired": false,
+      "productionInputAvailable": true
+    },
+    "FULL_1M_TICK": {
+      "verifiedRaw1mRequired": true,
+      "sealTickRequired": true,
+      "productionInputAvailable": false,
+      "unavailableUntil": "SIGNED_TICK_INGESTION"
+    },
+    "exactlyOnePerRun": true,
+    "combineMetrics": false,
+    "missingTickPolicy": "FULL_UNAVAILABLE_CORE_REPORTED_SEPARATELY",
+    "productionManualTickAccepted": false
+  },
+  "entry": {
+    "session": "T_PLUS_1",
+    "rulePathByLane": {
+      "asDecided": "decisionReceipt.decision.result.stocks[].executionReplayRule",
+      "counterfactual": "counterfactualDecision.result.stocks[].executionReplayRule"
+    },
+    "triggerWindowSource": "FROZEN_PER_STOCK_RULE",
+    "maxGapSource": "executionReplayRule.maxGapPct",
+    "fillMethod": "NEXT_1M_BAR_OPEN",
+    "fillPriceFormula": "ROUND_UP_NEXT_1M_OPEN_TIMES_ONE_PLUS_ENTRY_SLIPPAGE_TO_PROVIDER_TICK_THEN_RECHECK_LIMITS",
+    "fillProcessingOrder": "TRIGGER_TIME_ASC_THEN_DECISION_RANK_ASC_THEN_STABLE_SECURITY_ID_ASC",
+    "slippageBps": 5,
+    "barIntervalMinutes": 1,
+    "triggerBarFillPolicy": "TRIGGER_BAR_NEVER_FILLS_USE_IMMEDIATE_NEXT_CANONICAL_1M_BAR_ONLY",
+    "minuteEvidenceAuthority": "unified_minute_evidence_hierarchy_v1",
+    "referencePriceAdjustmentPolicy": "ADJUST_FROZEN_REFERENCE_AND_MAX_ENTRY_BY_PROVIDER_ACTION_FACTOR_EFFECTIVE_BEFORE_FILL",
+    "fillBarPositiveAmountAndVolumeRequired": true,
+    "upperLimitPolicy": "OPEN_AT_OR_ABOVE_PROVIDER_UPPER_LIMIT_NO_FILL",
+    "slippageBoundaryPolicy": "SLIPPAGE_ABOVE_UPPER_LIMIT_OR_MAX_ENTRY_NO_FILL",
+    "maximumFillBarParticipationPct": 5,
+    "participationCapBreachPolicy": "REJECT_WHOLE_ORDER_NO_DOWNSIZE",
+    "maximumOrderQuantityPolicy": "REJECT_WHOLE_ORDER_NO_SPLIT_NO_TRUNCATION",
+    "singleOrderPerSignal": true,
+    "partialFillPolicy": "ALL_OR_NONE",
+    "limitLockedPolicy": "NO_FILL",
+    "missingMinuteDataPolicy": "DATA_MISSING_NO_FILL"
+  },
+  "portfolio": {
+    "currency": "CNY",
+    "initialCapital": 1000000,
+    "initialCapitalRole": "SEED_CAPITAL_ONLY",
+    "tradingUnitSource": "PROVIDER_SECURITY_AND_DATE_SPECIFIC_RULES",
+    "requiredTradingUnitFields": [
+      "minimumBuyQuantity",
+      "buyQuantityIncrement",
+      "maximumOrderQuantity",
+      "sellOddLotPolicy",
+      "priceTick"
+    ],
+    "allocationPath": "positionAllocation.initialPortfolioPct",
+    "allocationBasis": "EQUITY_AFTER_T_CLOSE_EVENTS_EXITS_FEES_AND_MARK_TO_MARKET",
+    "allocationPercentUnit": "PERCENT_0_TO_100",
+    "targetTotalExposureFormula": "SIGNAL_EQUITY*SUM_INITIAL_PORTFOLIO_PCT/100",
+    "stockTargetNotionalFormula": "SIGNAL_EQUITY*STOCK_INITIAL_PORTFOLIO_PCT/100",
+    "exposureBudgetFormula": "MIN(AVAILABLE_CASH,MAX(0,SIGNAL_EQUITY*SUM_INITIAL_PORTFOLIO_PCT/100-OPEN_POSITION_MARKET_VALUE_AT_BUDGET_SNAPSHOT))",
+    "remainingExposureBudgetFormula": "MAX(0,FROZEN_INITIAL_EXPOSURE_BUDGET-SUM_PREVIOUS_ACTUAL_ENTRY_NOTIONAL_IN_FROZEN_FILL_ORDER)",
+    "budgetDecrementPolicy": "ONLY_FILLED_ENTRY_NOTIONAL_DECREMENTS_UNFILLED_ORDERS_DO_NOT",
+    "totalExposureTargetPathByLane": {
+      "asDecided": "decisionReceipt.decision.result.stocks[].positionAllocation.initialPortfolioPct",
+      "counterfactual": "counterfactualDecision.result.stocks[].positionAllocation.initialPortfolioPct"
+    },
+    "budgetSnapshotTime": "T_CLOSE_POST_EVENTS_EXITS_COSTS_AND_MARK_TO_MARKET",
+    "entrySizingMethod": "COMPUTE_DESIRED_QUANTITY_WITHOUT_MAXIMUM_ORDER_CAP_THEN_REJECT_IF_CAP_EXCEEDED",
+    "desiredQuantityFormula": "MAX_LEGAL_Q_WITH_Q*FILL_PRICE<=STOCK_TARGET_NOTIONAL_AND_Q*FILL_PRICE<=REMAINING_EXPOSURE_BUDGET_AND_Q*FILL_PRICE+ROUND_HALF_UP(Q*FILL_PRICE*ENTRY_FEE_BPS/10000,0.01)<=AVAILABLE_CASH_COMPUTED_WITHOUT_MAXIMUM_ORDER_CAP_THEN_REJECT_IF_Q_EXCEEDS_CAP",
+    "capacityAdmissionOrder": "DECISION_RANK_ASC_THEN_STABLE_SECURITY_ID_ASC",
+    "pendingOrderCapacityPolicy": "ADMITTED_ORDER_RESERVES_SLOT_UNTIL_FILLED_OR_T_PLUS_1_WINDOW_EXPIRES",
+    "pendingOrderExpiry": "END_OF_FROZEN_T_PLUS_1_TRIGGER_WINDOW",
+    "pendingCashReservationPolicy": "NONE_CASH_ASSIGNED_AT_FILL_TIME",
+    "admissionBackfillPolicy": "ONE_SHOT_AT_T_CLOSE_NO_DYNAMIC_BACKFILL_NO_BAR_LOOKBACK",
+    "maxConcurrentPositions": 5,
+    "capacityDefinition": "MAX_5_DISTINCT_OPEN_OR_CARRIED_SECURITIES_ACROSS_WHOLE_PORTFOLIO",
+    "existingPositionPolicy": "NO_ADD_DUPLICATE_SIGNAL_IGNORED",
+    "maximumPortfolioPctUse": "AUDIT_ONLY_NO_PYRAMIDING",
+    "insufficientOneLotPolicy": "NO_FILL_KEEP_CASH",
+    "cashInsufficientPolicy": "DO_NOT_EXCEED_OR_REDISTRIBUTE_TARGET_PROCESS_ADMITTED_ORDER_ONLY",
+    "cashReservationPolicy": "NO_FUTURE_EXIT_PROCEEDS_AND_NO_NEGATIVE_CASH",
+    "cashRemainderPolicy": "KEEP_CASH",
+    "unfilledTargetRedistributionPolicy": "NONE",
+    "actualAllocationAuditRequired": true,
+    "actualAllocationAuditFields": [
+      "plannedPortfolioPct",
+      "targetNotional",
+      "actualShares",
+      "actualNotional",
+      "actualPortfolioPct",
+      "allocationDeviationPct"
+    ],
+    "actualPortfolioPctFormula": "ACTUAL_ENTRY_NOTIONAL/SIGNAL_EQUITY*100",
+    "allocationAuditPopulation": "EVERY_FORMAL_RESULT_STOCK_UNFILLED_ROWS_USE_ACTUAL_ZERO",
+    "cashOnlyDayAllocationDeviationPolicy": "INCLUDE_VALID_CASH_ONLY_SIGNAL_DAY_WITH_ZERO_DEVIATION",
+    "allowLeverage": false,
+    "preserveCashForUntriggered": true,
+    "allowSameDaySell": false,
+    "capitalReusePolicy": "NO_REUSE_WHILE_POSITION_OPEN_OR_CARRIED"
+  },
+  "exit": {
+    "earliestSession": "T_PLUS_2",
+    "method": "LAYERED_V7_SELL_INTENT_STATE_MACHINE_FROM_T_PLUS_2",
+    "markToMarketAtEntryDayClose": true,
+    "sellabilityEvidence": "SIGNED_POSITION_DAILY_UPPER_PRICE_CONTEXT_AND_VERIFIED_RAW_1M_REQUIRED",
+    "securityLimitPolicy": "DATE_AND_SECURITY_SPECIFIC_PROVIDER_LIMITS_REQUIRED_NO_STATIC_PERCENT",
+    "lowerLimitIntentPolicy": "SUBMIT_OR_PERSIST_FULL_EXIT_INTENT_NO_SYNTHETIC_FILL",
+    "slippageBoundaryPolicy": "SLIPPAGE_BELOW_PROVIDER_LOWER_LIMIT_NO_FILL_KEEP_INTENT",
+    "maximumFillBarParticipationPct": 5,
+    "participationCapBreachPolicy": "REJECT_WHOLE_EXIT_NO_DOWNSIZE",
+    "maximumOrderQuantityPolicy": "REJECT_WHOLE_EXIT_NO_SPLIT_NO_TRUNCATION",
+    "partialFillPolicy": "ALL_OR_NONE_PER_INTENT",
+    "fillPriceFormula": "ROUND_DOWN_NEXT_1M_OPEN_TIMES_ONE_MINUS_EXIT_SLIPPAGE_TO_PROVIDER_TICK_THEN_RECHECK_LIMITS",
+    "priceTickPolicy": "BUY_ROUND_UP_SELL_ROUND_DOWN_USING_PROVIDER_TICK_THEN_RECHECK_LIMITS",
+    "sellOddLotPolicy": "USE_PROVIDER_SECURITY_DATE_RULE_TO_SELL_INTENT_QUANTITY",
+    "proceedsAvailability": "AVAILABLE_FOR_NEXT_TRADING_SESSION_AFTER_VALIDATED_FILL_AND_COST",
+    "costBasisPolicy": "WEIGHTED_AVERAGE_ADJUSTED_ONLY_BY_VALID_CORPORATE_ACTIONS",
+    "suspensionPolicy": "CARRY_LAST_VERIFIED_CLOSE_AND_FLAG_STALE",
+    "holdingExtensionPolicy": "NO_FIXED_MAXIMUM_WHILE_VERIFIED_TREND_FLOATING_PROFIT_MA5_AND_PROTECTION_RULES_PASS",
+    "datasetEndPolicy": "REPORT_UNREALIZED_AT_LAST_VERIFIED_CLOSE_NO_SYNTHETIC_EXIT",
+    "stateMachine": {
+      "authority": "canonical_position_sell_strategy_v7",
+      "version": 1,
+      "method": "layered_upper_context_then_verified_1m_fail_closed_v1",
+      "upperLayer": {
+        "positionContextAuthority": "canonical_position_state_context_v1",
+        "dailyContextAuthority": "canonical_v7_daily_sell_context_v1",
+        "upperContextAuthority": "canonical_sell_upper_context_v1",
+        "comparablePriceContextAuthority": "corporate_action_comparable_price_context_v1",
+        "negativeFeedbackAuthority": "canonical_unified_negative_feedback_v1",
+        "identityBindingRequiredFields": [
+          "securityId",
+          "tradingDate",
+          "generationId",
+          "sourceDecisionHash",
+          "canonicalPayloadHash"
+        ],
+        "sameSecurityDateGenerationAndDecisionRequired": true,
+        "canonicalPayloadHashRequired": true,
+        "pointInTimeNotAfterObservedBarRequired": true
+      },
+      "lowerLayer": {
+        "hardStopLossPctFromActualComparableFill": 7,
+        "peakProfitKeepRatio": 0.7,
+        "highWaterMarkSeedPolicy": "SIGNED_COMPARABLE_HWM_COVERING_THROUGH_PREVIOUS_TRADING_DAY_CLOSE",
+        "currentBarHighPolicy": "PRIOR_COMPLETED_BARS_ONLY_NO_SAME_BAR_FUTURE",
+        "limitBreakDrawdownPercentagePoints": 3,
+        "limitBreakConfirmCompletedBars": 5,
+        "limitBreakTriggerBarCountsTowardConfirmation": false,
+        "resealResetsConfirmation": true,
+        "sealRemainingRatio": 0.3,
+        "sealWeakDurationSeconds": 30,
+        "sealPartialExitPctOfCurrentPosition": 50,
+        "sealPartialExitMaxTimes": 1,
+        "negativeFeedbackMa5BiasStrictlyGreaterPct": 10,
+        "priorVolumeSessions": 2,
+        "cumulativeVolumeMustStrictlyExceedPriorMaximum": true,
+        "previousDayMinusCurrentChangeMinimumPercentagePoints": 7,
+        "deadlineObservedTime": "14:55",
+        "ma5Period": 5,
+        "trendExtensionRequiresFloatingProfit": true,
+        "trendMaximumHoldingSessions": null,
+        "t1RiskPolicy": "HARD_STOP_OR_LOWER_LIMIT_PERSISTS_FULL_EXIT_INTENT_NO_T_PLUS_1_FILL"
+      },
+      "sameBarPriority": [
+        "LOWER_LIMIT_FULL_EXIT",
+        "HARD_STOP_FULL_EXIT",
+        "PEAK_PROFIT_PROTECTION_FULL_EXIT",
+        "LIMIT_BREAK_FULL_EXIT",
+        "DEADLINE_FULL_EXIT",
+        "SEAL_DECAY_PARTIAL_EXIT",
+        "HOLD"
+      ]
+    },
+    "intentExecution": {
+      "strategyProducesIntentOnly": true,
+      "executionAuthority": false,
+      "actualPositionMutationPolicy": "VALIDATED_FILL_RECEIPT_ONLY",
+      "validatedFillReceiptRequired": true,
+      "fillMethod": "IMMEDIATE_NEXT_CANONICAL_1M_BAR_OPEN_OR_EXIT_BLOCKED",
+      "fullExitOverridesPartialSameBar": true,
+      "partialFillPolicy": "ALL_OR_NONE_PER_INTENT",
+      "unfilledIntentPolicy": "KEEP_ACTUAL_POSITION_AND_REPORT_EXIT_BLOCKED"
+    }
+  },
+  "corporateActions": {
+    "ledgerSchemaVersion": 1,
+    "ledgerAuthority": "provider_corporate_action_ledger_v1",
+    "commonRequiredFields": [
+      "eventId",
+      "positionLineageId",
+      "securityId",
+      "eventType",
+      "recordDate",
+      "exDate",
+      "effectiveAt",
+      "sourceTimestamp",
+      "sourceFileHash"
+    ],
+    "eventTypeRequiredFields": {
+      "CASH_DIVIDEND": [
+        "referencePriceMultiplier",
+        "netCashPerPreEventShareCny",
+        "paymentDate"
+      ],
+      "STOCK_DISTRIBUTION_OR_SPLIT": [
+        "referencePriceMultiplier",
+        "newSharesPerOldShare",
+        "fractionalCashPerShareCny",
+        "fractionalCashPaymentDate"
+      ],
+      "RIGHTS_ISSUE": [
+        "referencePriceMultiplier",
+        "rightsPerOldShare",
+        "subscriptionPriceCny",
+        "subscriptionDeadline"
+      ],
+      "SYMBOL_CHANGE": [
+        "successorSecurityId"
+      ],
+      "SECURITY_CONSIDERATION": [
+        "referencePriceMultiplier",
+        "successorSecurityId",
+        "successorSharesPerOldShare",
+        "costAllocationPct",
+        "settlementDate"
+      ],
+      "CASH_CONSIDERATION": [
+        "referencePriceMultiplier",
+        "terminalCashPerOldShareCny",
+        "settlementDate"
+      ]
+    },
+    "eventFieldUnits": "CNY_PER_PRE_EVENT_SHARE_INTEGER_SHARES_RATIO_NEW_PER_OLD_ISO_DATE_ASIA_SHANGHAI",
+    "securityIdentity": "PROVIDER_IMMUTABLE_SECURITY_ID_REQUIRED",
+    "entitlementQuantityPolicy": "SHARES_HELD_AT_PROVIDER_RECORD_DATE_CLOSE",
+    "entitlementEventTypes": [
+      "CASH_DIVIDEND",
+      "STOCK_DISTRIBUTION_OR_SPLIT",
+      "RIGHTS_ISSUE"
+    ],
+    "entitlementIdentityPolicy": "RESOLVE_RECORD_DATE_SECURITY_TO_POSITION_LINEAGE_BY_PROVIDER_IMMUTABLE_ID_MAPPING",
+    "recordDateSuspensionPolicy": "USE_ACTUAL_RECORDED_CLOSE_POSITION_QUANTITY_NO_SYNTHETIC_TRADE",
+    "referencePriceMultiplierDefinition": "POST_ACTION_COMPARABLE_PRICE_DIV_PRE_ACTION_COMPARABLE_PRICE",
+    "preEntryReferenceAdjustmentFormula": "FROZEN_RULE_PRICE_TIMES_PRODUCT_OF_MULTIPLIERS_EFFECTIVE_AFTER_SIGNAL_BEFORE_FILL",
+    "preEntryReferenceAdjustmentPolicy": "APPLY_PROVIDER_ACTION_FACTOR_TO_REFERENCE_TRIGGER_AND_MAX_ENTRY_BEFORE_FILL",
+    "cashDividendPolicy": "PROVIDER_NET_DIVIDEND_TO_RECEIVABLE_ON_EX_DATE_TO_CASH_ON_PAYMENT_DATE",
+    "cashDividendReceivableIncludedInEquity": true,
+    "cashDividendAvailableBeforePayment": false,
+    "stockDistributionPolicy": "ADJUST_SHARES_AND_COST_ON_EFFECTIVE_DATE_EXACT_RATIO_REQUIRED",
+    "fractionalSharePolicy": "PROVIDER_CASH_IN_LIEU_REQUIRED_OTHERWISE_RUN_INCOMPLETE",
+    "rightsIssuePolicy": "NO_SUBSCRIPTION_MARK_RUN_INCOMPLETE",
+    "symbolChangePolicy": "CONTINUE_POSITION_BY_IMMUTABLE_SECURITY_ID",
+    "successorSecurityPolicy": "CONTINUE_ORIGINAL_EXIT_CLOCK_AND_ALLOCATE_COST_BY_PROVIDER_PERCENTAGES",
+    "multipleSuccessorCapacityPolicy": "INHERITED_POSITIONS_MAY_EXCEED_LIMIT_BLOCK_NEW_ENTRIES_UNTIL_AT_OR_BELOW_LIMIT",
+    "mergerDelistingPolicy": "SETTLE_ONLY_WITH_PROVIDER_TERMINAL_CASH_OR_SECURITY_CONSIDERATION_OTHERWISE_INCOMPLETE_UNREALIZED",
+    "terminalConsiderationPosting": "RECEIVABLE_ON_EFFECTIVE_DATE_CASH_OR_SECURITIES_ON_PROVIDER_SETTLEMENT_DATE",
+    "missingActionEvidencePolicy": "RUN_INCOMPLETE_NO_PERFORMANCE_CLAIM"
+  },
+  "eventOrdering": {
+    "dailyOrder": "CORPORATE_ACTIONS_THEN_INTRADAY_ENTRIES_THEN_INTRADAY_EXIT_INTENTS_THEN_VALIDATED_FILLS_COSTS_AND_PROCEEDS_THEN_MARK_TO_MARKET_THEN_SIGNAL",
+    "sameDayExitProceedsForEntry": false,
+    "signalUsesPostClosePortfolioState": true
+  },
+  "priceAndAccounting": {
+    "priceAdjustmentMode": "RAW_UNADJUSTED",
+    "dailyOhlcMode": "RAW_UNADJUSTED",
+    "minuteOhlcMode": "RAW_UNADJUSTED",
+    "limitAndTickMode": "RAW_UNADJUSTED",
+    "executionAndMarkToMarketMode": "RAW_UNADJUSTED",
+    "corporateActionApplication": "LEDGER_ONLY_NO_ADJUSTED_PRICE_SERIES",
+    "internalDecimalPrecision": 12,
+    "cashEventRounding": "ROUND_HALF_UP_TO_CNY_FEN_PER_EVENT",
+    "feeRounding": "ROUND_HALF_UP_TO_CNY_FEN_PER_TRADE",
+    "shareQuantityPrecision": "INTEGER_SHARES",
+    "reportingPercentageRoundingDecimals": 4
+  },
+  "costs": {
+    "mode": "STRESS_SCENARIO",
+    "entrySlippageBps": 5,
+    "exitSlippageBps": 5,
+    "entryFeeBps": 4,
+    "exitFeeBps": 4,
+    "feeApplication": "ENTRY_FEE_ON_ENTRY_NOTIONAL_EXIT_FEE_ON_EXIT_NOTIONAL",
+    "unrealizedValuationFeePolicy": "DEDUCT_ENTRY_FEE_ONLY_UNTIL_REALIZED_EXIT",
+    "actualBrokerSchedule": false,
+    "note": "V7费用为统一压力情景，不冒充真实券商费率"
+  },
+  "dataPolicy": {
+    "datasetManifestRequired": true,
+    "datasetHashMode": "SHA256_CANONICAL_MANIFEST_WITH_SORTED_SOURCE_FILE_HASHES",
+    "exactlyOneLanePerDataset": true,
+    "laneBoundInDataset": true,
+    "securityMasterRequired": true,
+    "securityDateTradingRulesRequired": true,
+    "priceAdjustmentMode": "RAW_UNADJUSTED",
+    "volumeUnit": "SHARES_AFTER_PROVIDER_NORMALIZATION",
+    "corporateActionLedgerRequired": true,
+    "corporateActionLedgerSchema": "provider_corporate_action_ledger_v1",
+    "entryAndExitEvidenceRequired": true,
+    "asDecidedRequiredFields": [
+      "receiptId",
+      "decisionHash",
+      "receiptHash",
+      "authorizationPassed",
+      "resultStockCount",
+      "tradingDate",
+      "sourceFileHash"
+    ],
+    "counterfactualRequiredFields": [
+      "authority",
+      "asDecided",
+      "baseStrategyHash",
+      "candidateStrategyHash",
+      "definitionHash",
+      "pointInTimeDataHash",
+      "authorizationPassed",
+      "resultStockCount",
+      "generatedAt",
+      "tradingDate",
+      "sourceFileHash"
+    ],
+    "legacyT1OutcomeUse": "EVALUATION_ONLY_NOT_REALIZED_PNL",
+    "minuteEvidenceManifestRequired": true,
+    "sellVariantBoundInDataset": true,
+    "decisionReceiptAnchorRequired": true,
+    "signedContextAnchorsRequired": true,
+    "signedContextAuthorities": {
+      "position": "canonical_position_state_context_v1",
+      "daily": "canonical_v7_daily_sell_context_v1",
+      "upper": "canonical_sell_upper_context_v1",
+      "comparablePrice": "corporate_action_comparable_price_context_v1",
+      "negativeFeedback": "canonical_unified_negative_feedback_v1"
+    },
+    "sameContextIdentityRequiredFields": [
+      "securityId",
+      "tradingDate",
+      "generationId",
+      "sourceDecisionHash",
+      "canonicalPayloadHash"
+    ],
+    "fillReceiptAnchorRequired": true,
+    "manualTickAcceptedInProduction": false,
+    "formalPerformanceWithoutAllAnchors": "INCOMPLETE_NO_PERFORMANCE_CLAIM"
+  },
+  "enginePolicy": {
+    "engineManifestRequired": true,
+    "engineCommitRequired": true,
+    "engineTreeHashRequired": true,
+    "runtimeNodeVersionRequired": true,
+    "backtestDirectoryMustBeAnchored": true,
+    "positionEngineRequired": true,
+    "fillReceiptValidatorRequired": true,
+    "formalPerformanceEligibility": "FALSE_UNTIL_DATASET_ENGINE_POSITION_AND_FILL_RECEIPT_ANCHORS_VALIDATE"
+  },
+  "lanes": {
+    "asDecided": {
+      "asDecided": true,
+      "receiptRequired": true,
+      "executionAuthority": false
+    },
+    "counterfactual": {
+      "asDecided": false,
+      "receiptRequired": false,
+      "executionAuthority": false
+    },
+    "combineMetrics": false
+  },
+  "outcomes": {
+    "requiredStatuses": [
+      "cash_only",
+      "not_triggered",
+      "triggered_unfilled",
+      "below_minimum_order_unfilled",
+      "capacity_blocked",
+      "duplicate_signal_ignored",
+      "position_open",
+      "marked_to_market",
+      "t1_locked_exit_pending",
+      "exit_intent_pending",
+      "partial_exit_filled",
+      "sell_variant_unavailable",
+      "exit_blocked",
+      "carried",
+      "valuation_stale",
+      "settled",
+      "dataset_end_unrealized",
+      "corporate_action_unresolved",
+      "incomplete",
+      "data_missing"
+    ],
+    "deleteCashDays": false,
+    "deleteFailedSamples": false
+  },
+  "metrics": {
+    "required": [
+      "equityCurve",
+      "totalReturnPct",
+      "maxDrawdownPct",
+      "winRatePct",
+      "profitFactor",
+      "exposurePct",
+      "turnoverPct",
+      "cashDayCount",
+      "triggerRatePct",
+      "realizedReturnPct",
+      "unrealizedPnlPct",
+      "meanHoldingSessions",
+      "exitBlockedCount",
+      "capacityBlockedCount",
+      "duplicateSignalCount",
+      "belowMinimumOrderCount",
+      "plannedVsActualAllocationDeviationPct",
+      "corporateActionUnresolvedCount",
+      "staleValuationCount",
+      "datasetEndOpenPositionCount",
+      "incompleteRunCount"
+    ],
+    "groupBy": [
+      "bigCycle",
+      "smallCycle",
+      "theme",
+      "stockMode",
+      "marketCapBucket",
+      "sellVariant"
+    ]
+  },
+  "positionAccounting": {
+    "positionLineageIdFormula": "LANE_PLUS_SIGNAL_IDENTITY_PLUS_ORIGINAL_IMMUTABLE_SECURITY_ID",
+    "successorAggregationPolicy": "ALL_DESCENDANT_SECURITIES_RECEIVABLES_CASH_EVENTS_AND_FEES_REMAIN_ONE_LINEAGE",
+    "settledCondition": "ALL_LINEAGE_SECURITIES_CLOSED_AND_ALL_RECEIVABLES_SETTLED",
+    "entryCostBasisFormula": "SUM_ENTRY_FILL_PRICE_TIMES_SHARES_EXCLUDES_FEES",
+    "netRealizedPnlFormula": "ALL_LINEAGE_EXIT_AND_TERMINAL_PROCEEDS_PLUS_DIVIDENDS_PLUS_CASH_IN_LIEU_MINUS_ENTRY_NOTIONAL_COST_BASIS_MINUS_ALL_INCURRED_FEES",
+    "openLineageUnrealizedPnlFormula": "DESCENDANT_SECURITY_END_MARKET_VALUE_PLUS_UNSETTLED_RECEIVABLES_PLUS_LINEAGE_CASH_DIVIDENDS_CASH_IN_LIEU_EXIT_AND_TERMINAL_PROCEEDS_ALREADY_RECEIVED_MINUS_ENTRY_NOTIONAL_COST_BASIS_MINUS_ALL_INCURRED_FEES",
+    "datasetEndOpenPositionCountDefinition": "COUNT_ALL_UNSETTLED_POSITION_LINEAGES_REGARDLESS_OF_REMAINING_SECURITY_SHARE_COUNT",
+    "winLossCountingPolicy": "ONE_SETTLED_LINEAGE_COUNTS_ONCE_REGARDLESS_OF_SUCCESSOR_COUNT",
+    "holdingPeriodPolicy": "ORIGINAL_ENTRY_SESSION_TO_FINAL_LINEAGE_SETTLEMENT_SESSION_BOTH_INCLUDED"
+  },
+  "metricDefinitions": {
+    "equityCurve": "EACH_TRADING_DAY_CLOSE_CASH_PLUS_RECEIVABLES_PLUS_SUM_RAW_CLOSE_TIMES_SHARES",
+    "totalReturnPct": "FINAL_TOTAL_EQUITY_DIV_INITIAL_CAPITAL_MINUS_ONE_TIMES_100_INCLUDES_UNREALIZED",
+    "maxDrawdownPct": "MAX_PEAK_TO_TROUGH_PCT_ON_DAILY_CLOSE_TOTAL_EQUITY_CURVE",
+    "winRatePct": "SETTLED_LINEAGES_NET_REALIZED_PNL_GT_ZERO_DIV_ALL_SETTLED_LINEAGES_TIMES_100",
+    "profitFactor": "SUM_POSITIVE_SETTLED_LINEAGE_NET_PNL_DIV_ABS_SUM_NEGATIVE_SETTLED_LINEAGE_NET_PNL_NULL_IF_NO_NEGATIVE",
+    "exposurePct": "MEAN_DAILY_CLOSE_GROSS_POSITION_MARKET_VALUE_DIV_TOTAL_EQUITY_TIMES_100",
+    "turnoverPct": "SUM_ABS_BUY_AND_SELL_EXECUTED_NOTIONAL_DIV_MEAN_DAILY_TOTAL_EQUITY_TIMES_100",
+    "cashDayCount": "COUNT_TRADING_DAYS_WITH_ZERO_OPEN_POSITIONS_ZERO_CARRIED_POSITIONS_AND_ZERO_FILLS",
+    "triggerRatePct": "COUNT_TRIGGERED_ADMITTED_SIGNALS_DIV_ALL_ADMITTED_SIGNALS_TIMES_100",
+    "realizedReturnPct": "SUM_SETTLED_LINEAGE_NET_REALIZED_PNL_DIV_INITIAL_CAPITAL_TIMES_100",
+    "unrealizedPnlPct": "SUM_DATASET_END_UNSETTLED_LINEAGE_UNREALIZED_PNL_DIV_INITIAL_CAPITAL_TIMES_100",
+    "meanHoldingSessions": "MEAN_SETTLED_LINEAGE_TRADING_SESSIONS_ORIGINAL_ENTRY_AND_FINAL_SETTLEMENT_BOTH_INCLUDED",
+    "plannedVsActualAllocationDeviationPct": "MEAN_ACROSS_ALL_VALID_SIGNAL_DAYS_INCLUDING_CASH_ONLY_OF_SUM_FORMAL_RESULT_ROWS_ABS(ACTUAL_ENTRY_NOTIONAL/SIGNAL_EQUITY*100-PLANNED_PORTFOLIO_PCT)",
+    "countMetrics": "INTEGER_EVENT_OR_STATE_COUNTS_WITH_NO_DEDUPLICATION_BEYOND_STABLE_EVENT_ID",
+    "datasetEndOpenPositionCount": "COUNT_ALL_UNSETTLED_POSITION_LINEAGES_REGARDLESS_OF_REMAINING_SECURITY_SHARE_COUNT"
+  },
+  "metricZeroDenominatorPolicy": {
+    "winRatePct": null,
+    "profitFactor": null,
+    "triggerRatePct": null,
+    "meanHoldingSessions": null,
+    "exposurePct": null,
+    "turnoverPct": null,
+    "cashDayCount": 0,
+    "countMetrics": 0
+  },
+  "metricGroupingPolicy": {
+    "labelSource": "ORIGINAL_OPENING_SIGNAL_FROZEN_BIG_CYCLE_SMALL_CYCLE_THEME_STOCK_MODE_MARKET_CAP_BUCKET",
+    "tradeLevelMetrics": [
+      "winRatePct",
+      "profitFactor",
+      "realizedReturnPct",
+      "meanHoldingSessions",
+      "triggerRatePct",
+      "plannedVsActualAllocationDeviationPct",
+      "countMetrics"
+    ],
+    "portfolioLevelMetrics": [
+      "equityCurve",
+      "totalReturnPct",
+      "maxDrawdownPct",
+      "exposurePct",
+      "turnoverPct",
+      "cashDayCount"
+    ],
+    "portfolioMetricGrouping": "OVERALL_ONLY_NO_SIMPLE_GROUP_ATTRIBUTION",
+    "successorGrouping": "INHERIT_ORIGINAL_LINEAGE_OPENING_SIGNAL_LABELS",
+    "sellVariantGrouping": "CORE_1M_AND_FULL_1M_TICK_SEPARATE_NO_MERGE"
+  },
+  "validationThresholds": {
+    "minimumChangedDecisionSamples": 10,
+    "minimumInvestedDecisionDays": 30,
+    "requireChronologicalOutOfSample": true,
+    "requireMultipleMarketRegimes": true,
+    "autoApplyParameters": false
+  },
+  "guardrails": {
+    "noFutureData": true,
+    "keepCashDays": true,
+    "noSyntheticFill": true,
+    "noOutcomeDrivenParameterChange": true,
+    "exactTradingCalendarRequired": true,
+    "providerTimestampRequired": true,
+    "observationsCannotGrantExecution": true,
+    "entryDayCloseIsMarkToMarketOnly": true,
+    "legacyT1OutcomeCannotSettlePosition": true,
+    "unrealizedCannotEnterRealizedReturn": true,
+    "capitalRemainsOccupiedWhileCarried": true,
+    "incompleteRunCannotClaimPerformance": true,
+    "triggerBarCannotFillItself": true,
+    "barStartObservedAtEnd": true,
+    "sellIntentCannotMutatePosition": true,
+    "fillReceiptRequiredForPositionMutation": true,
+    "minuteVolumeCannotProxySealTick": true,
+    "sellVariantsCannotCombineMetrics": true,
+    "t1IntentCannotFillBeforeTPlus2": true,
+    "manualTickCannotEnterProduction": true,
+    "formalPerformanceRequiresAllAnchors": true
+  },
+  "integrity": {
+    "immutable": true,
+    "contractHashAlgorithm": "sha256_canonical_json_v1",
+    "contractHash": "d7b1d7ed8c22829a81e08880a60655470e658d57544208278456b2d1a344911e"
+  }
+}
